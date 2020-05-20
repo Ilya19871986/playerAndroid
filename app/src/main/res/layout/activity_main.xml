@@ -7,19 +7,41 @@
     tools:context=".MainActivity">
 
     <EditText
+        android:id="@+id/panelName"
+        style="@android:style/Widget.Material.Light.EditText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="130dp"
+        android:layout_marginEnd="20dp"
+        android:backgroundTint="#040404"
+        android:backgroundTintMode="src_in"
+        android:ems="5"
+        android:hint="Название панели"
+        android:importantForAutofill="no"
+        android:inputType="textPassword"
+        android:maxLength="15"
+        android:maxLines="1"
+        android:password="false"
+        android:shadowColor="#353131"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView2" />
+
+    <EditText
         android:id="@+id/pass"
         style="@android:style/Widget.Material.Light.EditText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
-        android:layout_marginTop="120dp"
+        android:layout_marginTop="90dp"
         android:layout_marginEnd="20dp"
-        android:autoText="false"
-        android:backgroundTint="#009688"
-        android:backgroundTintMode="screen"
-        android:editable="true"
+        android:backgroundTint="#040404"
+        android:backgroundTintMode="src_in"
         android:ems="5"
         android:hint="Пароль"
+        android:importantForAutofill="no"
         android:inputType="textPassword"
         android:maxLength="15"
         android:maxLines="1"
@@ -37,8 +59,9 @@
         android:layout_marginStart="20dp"
         android:layout_marginTop="50dp"
         android:layout_marginEnd="20dp"
-        android:backgroundTint="#009688"
-        android:backgroundTintMode="screen"
+        android:autofillHints=""
+        android:backgroundTint="#161717"
+        android:backgroundTintMode="src_in"
         android:editable="true"
         android:ems="5"
         android:hint="Логин"
@@ -48,8 +71,7 @@
         android:shadowColor="#353131"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView2"
-        android:autofillHints="" />
+        app:layout_constraintTop_toBottomOf="@+id/textView2" />
 
     <TextView
         android:id="@+id/textView2"
@@ -66,13 +88,13 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
-        android:onClick="go"
         android:id="@+id/entering"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="40dp"
         android:layout_marginEnd="20dp"
+        android:onClick="go"
         android:text="Войти"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
