@@ -6,6 +6,9 @@ public class User {
     private String token;
     private String panelName;
 
+    public  User() {
+
+    }
 
     public User(long id, String username, String token, String panelName) {
         this.id = id;
