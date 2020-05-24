@@ -5,12 +5,13 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
-    private static final String DATABASE_NAME = "userstore.db"; // название бд
+    private static final String DATABASE_NAME = "store.db"; // название бд
     private static final int SCHEMA = 1; // версия базы данных
     static final String TABLE = "user"; // название таблицы в бд
     // названия столбцов
     public static final String COLUMN_ID = "_id";
     public static final String COLUMN_USERNAME = "username";
+    public static final String COLUMN_PASS = "password";
     public static final String COLUMN_TOKEN = "token";
     public static final String COLUMN_PANELNAME = "panelName";
 
@@ -19,9 +20,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
     @Override
     public void onCreate(SQLiteDatabase db) {
+        //onUpgrade(db, 1, 1);
         db.execSQL("CREATE TABLE " + TABLE + " (" +
                 COLUMN_ID  + " TEXT," +
                 COLUMN_USERNAME  + " TEXT, " +
+                COLUMN_PASS  + " TEXT, " +
                 COLUMN_TOKEN + " TEXT, " +
                 COLUMN_PANELNAME + " TEXT);");
     }

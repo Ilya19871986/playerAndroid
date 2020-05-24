@@ -29,22 +29,89 @@ public class Api {
     OkHttpClient httpClient = new OkHttpClient();
     String serverUsername = null;
     String serverToken = null;
-    String MyPanel = null;
+    String password = null;
+    String panelId = null;
 
-  public void AuthCreatePanel(String username, String password, final String panelName) {
+  public  void RefreshToken(String username, final String password, final String panelName) {
+      RequestBody formBody = new FormBody.Builder().add("coupon", "").build();
+      HttpUrl.Builder httpBuilder = HttpUrl.parse(apiAddr + "/token?username=" + username + "&password=" + password).newBuilder();
+      Request request = new Request.Builder().url(httpBuilder.build()).post(formBody).build();
+      httpClient.newCall(request).enqueue(new Callback() {
+          @Override
+          public void onFailure(Call call, IOException e) {
+              String mMessage = e.getMessage();
+              Log.e("failure Response", mMessage);
+              call.cancel();
+          }
+          @Override
+          public void onResponse(Call call, Response response) throws IOException {
+              String mMessage = response.body().string();
+              if (response.isSuccessful()){
+                  try {
+                      JSONObject json = new JSONObject(mMessage);
+                      serverUsername = json.getString("username");
+                      serverToken = json.getString("access_token");
 
-      MyPanel = panelName;
+                      Log.e("Обновление токена", serverToken);
+                      adapter.open();
+                      adapter.update(new User(1, serverUsername, password, serverToken, panelName));
+                      adapter.close();
+                      Log.e("-", "Обновление токена завершено");
+
+                  } catch (Exception e){
+                      e.printStackTrace();
+                  }
+              }
+          }
+      });
+  }
+
+  public void createPanel(String username, final String panelName, String token) {
+      HttpUrl.Builder httpBuilderCreatePanel = HttpUrl.parse(apiAddr +
+              "/panel/createPanel?panelName=" + panelName + "&username=" + username).newBuilder();
+      Request requestCreatePanel = new Request.Builder().url(httpBuilderCreatePanel.build())
+              .header("Authorization", "Bearer " + token)
+              .build();
+
+      httpClient.newCall(requestCreatePanel).enqueue(new Callback() {
+          @Override
+          public void onFailure(Call call, IOException e) {
+              String mMessage = e.getMessage();
+              Log.e("failure Response", mMessage);
+              call.cancel();
+          }
+          @Override
+          public void onResponse(Call call, Response response) throws IOException {
+              String mMessage = response.body().string();
+              if (response.isSuccessful()){
+                  try {
+                      JSONObject json = new JSONObject(mMessage);
+                      panelId = json.getString("id");
+                      adapter.open();
+                      User user = adapter.getUser(1);
+                      user.setId(Long.parseLong(panelId));
+                      adapter.update(user);
+                      adapter.close();
+                      Log.e("id ", panelId);
+
+                  } catch (Exception e){
+                      e.printStackTrace();
+                  }
+              }
+          }
+      });
+  }
+
+  public void AuthCreatePanel(String username, final String password, final String panelName) {
 
       RequestBody formBody = new FormBody.Builder().add("coupon", "").build();
-
-      HttpUrl.Builder httpBuider = HttpUrl.parse(apiAddr + "/token?username=" + username + "&password=" + password).newBuilder();
-
-      Request request = new Request.Builder().url(httpBuider.build()).post(formBody).build();
+      HttpUrl.Builder httpBuilder = HttpUrl.parse(apiAddr + "/token?username=" + username + "&password=" + password).newBuilder();
+      Request request = new Request.Builder().url(httpBuilder.build()).post(formBody).build();
 
       httpClient.newCall(request).enqueue(new Callback() {
           @Override
           public void onFailure(Call call, IOException e) {
-              String mMessage = e.getMessage().toString();
+              String mMessage = e.getMessage();
               Log.e("failure Response", mMessage);
               call.cancel();
           }
@@ -59,9 +126,9 @@ public class Api {
                       Log.e("user", serverUsername);
                       Log.e("token", serverToken);
                       adapter.open();
-                      adapter.insert(new User(1, serverUsername, serverToken, MyPanel));
+                      adapter.insert(new User(1, serverUsername, password, serverToken, panelName));
                       adapter.close();
-
+                      createPanel(serverUsername, panelName, serverToken);
                   } catch (Exception e){
                       e.printStackTrace();
                   }

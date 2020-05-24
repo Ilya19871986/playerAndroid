@@ -30,7 +30,7 @@ public class DatabaseAdapter {
     }
 
     private Cursor getAllEntries(){
-        String[] columns = new String[] {DatabaseHelper.COLUMN_ID, DatabaseHelper.COLUMN_USERNAME, DatabaseHelper.COLUMN_TOKEN, DatabaseHelper.COLUMN_PANELNAME};
+        String[] columns = new String[] {DatabaseHelper.COLUMN_ID, DatabaseHelper.COLUMN_USERNAME, DatabaseHelper.COLUMN_PASS,  DatabaseHelper.COLUMN_TOKEN, DatabaseHelper.COLUMN_PANELNAME};
         return  database.query(DatabaseHelper.TABLE, columns, null, null, null, null, null);
     }
 
@@ -43,9 +43,10 @@ public class DatabaseAdapter {
             do {
                 int id = cursor.getInt(cursor.getColumnIndex(DatabaseHelper.COLUMN_ID));
                 String username = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COLUMN_USERNAME));
+                String pass = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COLUMN_PASS));
                 String token = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COLUMN_TOKEN));
                 String panelName = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COLUMN_PANELNAME));
-                users.add(new User(id, username, token, panelName));
+                users.add(new User(id, username, pass, token, panelName));
             }
             while (cursor.moveToNext());
 
@@ -58,16 +59,17 @@ public class DatabaseAdapter {
         return DatabaseUtils.queryNumEntries(database, DatabaseHelper.TABLE);
     }
 
-    public User getUser(long id) {
+    public User getUser(int id) {
         User user = null;
         String query = String.format("SELECT * FROM %s WHERE %s=?",DatabaseHelper.TABLE, DatabaseHelper.COLUMN_ID);
         Cursor cursor = database.rawQuery(query, new String[]{ String.valueOf(id)});
 
         if (cursor.moveToFirst()) {
             String username = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COLUMN_USERNAME));
+            String pass = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COLUMN_PASS));
             String token = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COLUMN_TOKEN));
             String panelName = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COLUMN_PANELNAME));
-            user  = new User(id, username, token, panelName);
+            user  = new User(id, username, pass,  token, panelName);
         }
         cursor.close();
         return  user;
@@ -79,7 +81,7 @@ public class DatabaseAdapter {
 
         cv.put(DatabaseHelper.COLUMN_ID, user.getId());
         cv.put(DatabaseHelper.COLUMN_USERNAME, user.getUsername());
-        cv.put(DatabaseHelper.COLUMN_USERNAME, user.getUsername());
+        cv.put(DatabaseHelper.COLUMN_PASS, user.getPassword());
         cv.put(DatabaseHelper.COLUMN_TOKEN, user.getToken());
         cv.put(DatabaseHelper.COLUMN_PANELNAME, user.getPanelName());
 
@@ -100,7 +102,7 @@ public class DatabaseAdapter {
 
         cv.put(DatabaseHelper.COLUMN_ID, user.getId());
         cv.put(DatabaseHelper.COLUMN_USERNAME, user.getUsername());
-        cv.put(DatabaseHelper.COLUMN_USERNAME, user.getUsername());
+        cv.put(DatabaseHelper.COLUMN_PASS, user.getPassword());
         cv.put(DatabaseHelper.COLUMN_TOKEN, user.getToken());
         cv.put(DatabaseHelper.COLUMN_PANELNAME, user.getPanelName());
 

@@ -3,6 +3,7 @@ package com.ekran.player;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -26,7 +27,7 @@ public class MainActivity extends AppCompatActivity {
 
         adapter = new DatabaseAdapter(this);
 
-        adapter.open(); //adapter.delete(1);
+        adapter.open(); adapter.delete(1);
         List<User> users = adapter.getUsers();
 
         // если есть авторизация
@@ -38,9 +39,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void Auth(View view) {
-        EditText login = (EditText) findViewById(R.id.login);
-        EditText pass = (EditText) findViewById(R.id.pass);
-        EditText panelName = (EditText) findViewById(R.id.panelName);
+        EditText login = findViewById(R.id.login);
+        EditText pass = findViewById(R.id.pass);
+        EditText panelName = findViewById(R.id.panelName);
 
         Api api = new Api();
         api.AuthCreatePanel(login.getText().toString(), pass.getText().toString(), panelName.getText().toString());

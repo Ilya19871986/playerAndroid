@@ -3,6 +3,7 @@ package com.ekran.player.model;
 public class User {
     private long id;
     private String username;
+    private String password;
     private String token;
     private String panelName;
 
@@ -10,9 +11,10 @@ public class User {
 
     }
 
-    public User(long id, String username, String token, String panelName) {
+    public User(long id, String username, String pass, String token, String panelName) {
         this.id = id;
         this.username = username;
+        this.password = pass;
         this.token = token;
         this.panelName = panelName;
     }
@@ -28,6 +30,8 @@ public class User {
     public String getUsername() {
         return username;
     }
+
+    public  String getPassword() { return  this.password; };
 
     public void setUsername(String username) {
         this.username = username;

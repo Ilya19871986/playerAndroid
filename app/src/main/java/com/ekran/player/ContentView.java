@@ -5,13 +5,19 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 import android.widget.VideoView;
 
+import com.ekran.player.model.User;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import static android.media.MediaPlayer.*;
+import static com.ekran.player.MainActivity.adapter;
 
 public class ContentView extends AppCompatActivity {
 
@@ -87,5 +93,19 @@ public class ContentView extends AppCompatActivity {
 
         videoPlayer =  findViewById(R.id.videoPlayer);
         videoPlayer.start();
+
+        adapter.open();
+        final User user = adapter.getUser(1);
+        adapter.close();
+
+        final Timer refreshTokenTimer = new Timer();
+        refreshTokenTimer.schedule(
+                new TimerTask() {
+                    @Override
+                    public void run() {
+                        Api api = new Api();
+                        api.RefreshToken(user.getUsername(), user.getPassword(), user.getPanelName());
+                    }
+                }, 0, 1000 * 60 * 60);
     }
 }
