@@ -19,7 +19,7 @@
         android:ems="5"
         android:hint="Название панели"
         android:importantForAutofill="no"
-        android:inputType="textPassword"
+        android:inputType="text|textPassword"
         android:maxLength="15"
         android:maxLines="1"
         android:password="false"

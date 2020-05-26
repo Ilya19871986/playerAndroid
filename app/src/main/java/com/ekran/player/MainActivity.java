@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 
+import com.ekran.player.model.Content;
 import com.ekran.player.model.User;
 
 import java.util.List;
@@ -27,12 +28,10 @@ public class MainActivity extends AppCompatActivity {
 
         adapter = new DatabaseAdapter(this);
 
-        adapter.open(); adapter.delete(1);
+        adapter.open(); //adapter.delete(37); adapter.delete(1);
         List<User> users = adapter.getUsers();
-
         // если есть авторизация
         if (adapter.getCount() != 0)  {
-            Log.e("token:", users.get(0).getToken());
             startActivity(intent);
         }
         adapter.close();
@@ -44,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
         EditText panelName = findViewById(R.id.panelName);
 
         Api api = new Api();
+        //api.GetListToUpload();
         api.AuthCreatePanel(login.getText().toString(), pass.getText().toString(), panelName.getText().toString());
     }
 }

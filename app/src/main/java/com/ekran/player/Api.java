@@ -5,13 +5,16 @@ import android.content.Context;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.ekran.player.model.Content;
 import com.ekran.player.model.User;
 import com.google.gson.Gson;
 import com.google.gson.internal.$Gson$Preconditions;
+import com.google.gson.reflect.TypeToken;
 
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.List;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -90,7 +93,7 @@ public class Api {
                       adapter.open();
                       User user = adapter.getUser(1);
                       user.setId(Long.parseLong(panelId));
-                      adapter.update(user);
+                      long x = adapter.insert(user);
                       adapter.close();
                       Log.e("id ", panelId);
 
@@ -123,12 +126,54 @@ public class Api {
                       JSONObject json = new JSONObject(mMessage);
                       serverUsername = json.getString("username");
                       serverToken = json.getString("access_token");
-                      Log.e("user", serverUsername);
-                      Log.e("token", serverToken);
                       adapter.open();
                       adapter.insert(new User(1, serverUsername, password, serverToken, panelName));
                       adapter.close();
                       createPanel(serverUsername, panelName, serverToken);
+                  } catch (Exception e){
+                      e.printStackTrace();
+                  }
+              }
+          }
+      });
+  }
+
+  public void GetListToUpload() {
+      adapter.open();
+      List<User> users = adapter.getUsers();
+      String token = users.get(1).getToken();
+      long id = users.get(1).getId();
+      adapter.close();
+
+      HttpUrl.Builder httpBuilderCreatePanel = HttpUrl.parse(apiAddr +
+              "/content/toUpload?PanelId=" + id).newBuilder();
+      Request requestContent = new Request.Builder()
+              .url(httpBuilderCreatePanel.build())
+              .header("Authorization", "Bearer " + token)
+              .build();
+      httpClient.newCall(requestContent).enqueue(new Callback() {
+          @Override
+          public void onFailure(Call call, IOException e) {
+              String mMessage = e.getMessage();
+              Log.e("failure Response", mMessage);
+              call.cancel();
+          }
+          @Override
+          public void onResponse(Call call, Response response) throws IOException {
+              String mMessage = response.body().string();
+              if (response.isSuccessful()){
+                  try {
+                      Gson gson = new Gson();
+                      List<Content> list = gson.fromJson(mMessage, new TypeToken<List<Content>>() {}.getType());
+                      adapter.open();
+                      adapter.delAllContent();
+                      for (Content c : list) {
+                          Log.e("contet:", c.toString());
+                          adapter.insertContent(c);
+                      }
+                      Log.e("count: ", String.valueOf(adapter.getCountContent()));
+                      adapter.close();
+                      //Log.e("FileName: ", fileName);
                   } catch (Exception e){
                       e.printStackTrace();
                   }

@@ -27,6 +27,7 @@ public class ContentView extends AppCompatActivity {
     // количество файлов
     private static int countFile = 0;
     ArrayList<String>  listVideo = new ArrayList<>();
+    Api api = new Api();
 
     private Uri getMedia(String mediaName) {
         return Uri.parse("android.resource://" + getPackageName() + "/raw/" + mediaName);
@@ -103,9 +104,19 @@ public class ContentView extends AppCompatActivity {
                 new TimerTask() {
                     @Override
                     public void run() {
-                        Api api = new Api();
                         api.RefreshToken(user.getUsername(), user.getPassword(), user.getPanelName());
                     }
-                }, 0, 1000 * 60 * 60);
+                }, 0, 1000 * 60 * 60
+        );
+
+         final Timer getContentVideo = new Timer();
+         getContentVideo.schedule(
+                 new TimerTask() {
+                     @Override
+                     public void run() {
+                         api.GetListToUpload();
+                     }
+                 }, 0, 1000 * 60 * 1
+         );
     }
 }
