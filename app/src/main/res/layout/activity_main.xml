@@ -19,7 +19,7 @@
         android:ems="5"
         android:hint="Название панели"
         android:importantForAutofill="no"
-        android:inputType="text|textPassword"
+        android:inputType="textPersonName"
         android:maxLength="15"
         android:maxLines="1"
         android:password="false"
@@ -95,7 +95,7 @@
         android:layout_marginTop="40dp"
         android:layout_marginEnd="20dp"
         android:onClick="Auth"
-        android:text="Войти"
+        android:text="Регистрация"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/pass" />

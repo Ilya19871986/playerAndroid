@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
 
 import com.ekran.player.model.Content;
 import com.ekran.player.model.User;
@@ -40,6 +41,13 @@ public class DatabaseAdapter {
                 DatabaseHelper.COLUMN_CONT_SY, DatabaseHelper.COLUMN_CONT_DE, DatabaseHelper.COLUMN_CONT_ED,
                 DatabaseHelper.COLUMN_CONT_UI, DatabaseHelper.COLUMN_CONT_PI, DatabaseHelper.COLUMN_CONT_TC};
         return  database.query(DatabaseHelper.TABLE_CONTENT, columns, null, null, null, null, null);
+    }
+
+    public void PrintContent() {
+        List<Content> contents = getContent();
+        for (Content c : contents) {
+            Log.e("content: ", c.toString());
+        }
     }
 
     public List<Content> getContent() {
@@ -127,7 +135,6 @@ public class DatabaseAdapter {
         cv.put(DatabaseHelper.COLUMN_CONT_UI, content.getUser_id());
         cv.put(DatabaseHelper.COLUMN_CONT_PI, content.getPanel_id());
         cv.put(DatabaseHelper.COLUMN_CONT_TC, content.getType_content());
-
         return  database.insert(DatabaseHelper.TABLE_CONTENT, null, cv);
     }
 
@@ -139,6 +146,10 @@ public class DatabaseAdapter {
 
     public void delAllContent() {
         database.delete(DatabaseHelper.TABLE_CONTENT, null, null);
+    }
+
+    public void delAllUser() {
+        database.delete(DatabaseHelper.TABLE, null, null);
     }
 
     public long delete(long userId){

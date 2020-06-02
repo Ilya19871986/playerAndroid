@@ -2,6 +2,7 @@ package com.ekran.player;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.pm.ActivityInfo;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
@@ -11,13 +12,16 @@ import android.widget.VideoView;
 
 import com.ekran.player.model.User;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import static android.media.MediaPlayer.*;
 import static com.ekran.player.MainActivity.adapter;
+import static com.ekran.player.MainActivity.user;
 
 public class ContentView extends AppCompatActivity {
 
@@ -27,50 +31,74 @@ public class ContentView extends AppCompatActivity {
     // количество файлов
     private static int countFile = 0;
     ArrayList<String>  listVideo = new ArrayList<>();
-    Api api = new Api();
+    private  static Api api = null;
+
+    public static int flag = 0;
 
     private Uri getMedia(String mediaName) {
-        return Uri.parse("android.resource://" + getPackageName() + "/raw/" + mediaName);
+        //return Uri.parse("android.resource://" + getPackageName() + "/raw/" + mediaName);
+        return Uri.parse("/data/data/com.ekran.player/files/" + mediaName);
     }
 
-    // получаем список файлов
     private ArrayList<String> getListVideo() {
-        ArrayList<String> res = new ArrayList<>();
-        Field[] fields = R.raw.class.getFields();
-        countFile  = fields.length - 1;
-        for(int count = 0; count <= countFile; count++) {
-            res.add(fields[count].getName());
+        final File rootDir = new File("/data/data/com.ekran.player/files");
+        ArrayList<String> list = new ArrayList<>();
+        File[] filesArray = rootDir.listFiles();
+
+        countFile = 0;
+        for (File f : filesArray) {
+            if (f.isFile() && !f.getName().contains("_ftp") && f.getName().contains("mp4") && !f.getName().contains("krug.mp4")) {
+                Log.e("file", f.getName());
+                list.add(f.getName());
+                countFile++;
+            }
         }
-        return  res;
+        if (countFile == 0) {
+            list.add("krug.mp4");
+            countFile = 1;
+        }
+        countFile--;
+        return list;
     }
 
     private void initializePlayer() {
-        Uri videoUri = getMedia(listVideo.get(currentFile));
-        videoPlayer.setVideoURI(videoUri);
-        videoPlayer.start();
-        videoPlayer.setOnCompletionListener(
-                new OnCompletionListener() {
-                    @Override
-                    public void onCompletion(MediaPlayer mp) {
-                        if (currentFile == countFile ) {
-                            currentFile = 0;
-                        } else {
-                            currentFile++;
+        if (listVideo != null) {
+            Uri videoUri = getMedia(listVideo.get(currentFile));
+            videoPlayer.setVideoURI(videoUri);
+            videoPlayer.start();
+            flag = 1;
+        }
+        if (videoPlayer != null) {
+            videoPlayer.setOnCompletionListener(
+                    new OnCompletionListener() {
+                        @Override
+                        public void onCompletion(MediaPlayer mp) {
+                            try {
+                                listVideo = getListVideo();
+                                if (currentFile >= countFile ) {
+                                    currentFile = 0;
+                                } else {
+                                    currentFile++;
+                                }
+                                if (listVideo != null) {
+                                    Uri videoUri = getMedia(listVideo.get(currentFile));
+                                    videoPlayer.setVideoURI(videoUri);
+                                    videoPlayer.seekTo(0);
+                                    videoPlayer.start();
+                                    flag = 1;
+                                }
+                            }
+                            catch (Exception e) {
+                                e.printStackTrace();
+                            }
                         }
-                        //Toast.makeText(ContentView.this, "currentFile", Toast.LENGTH_SHORT).show();
-
-                        Uri videoUri = getMedia(listVideo.get(currentFile));
-                        videoPlayer.setVideoURI(videoUri);
-
-                        videoPlayer.seekTo(0);
-                        videoPlayer.start();
                     }
-                }
-        );
+            );
+        }
     }
 
     private void releasePlayer() {
-        videoPlayer.stopPlayback();
+        if (videoPlayer != null) videoPlayer.stopPlayback();
     }
 
     @Override
@@ -88,16 +116,20 @@ public class ContentView extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        api = new Api();
+
+        List<User> users = adapter.getUsers();
+        user = users.get(1);
+
         setContentView(R.layout.activity_content_view);
 
         listVideo = getListVideo();
-
-        videoPlayer =  findViewById(R.id.videoPlayer);
-        videoPlayer.start();
-
-        adapter.open();
-        final User user = adapter.getUser(1);
-        adapter.close();
+        if (listVideo != null) {
+            videoPlayer =  findViewById(R.id.videoPlayer);
+            videoPlayer.start();
+        }
+        user = adapter.getUser(1);
 
         final Timer refreshTokenTimer = new Timer();
         refreshTokenTimer.schedule(
@@ -114,6 +146,7 @@ public class ContentView extends AppCompatActivity {
                  new TimerTask() {
                      @Override
                      public void run() {
+                         api.GetListToDelete();
                          api.GetListToUpload();
                      }
                  }, 0, 1000 * 60 * 1
