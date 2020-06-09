@@ -9,6 +9,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final int SCHEMA = 1; // версия базы данных
     static final String TABLE = "user";
     static final String TABLE_CONTENT = "content";
+    static final String TABLE_VERSION = "version";
     // названия столбцов
     public static final String COLUMN_ID = "_id";
     public static final String COLUMN_USERNAME = "username";
@@ -25,6 +26,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COLUMN_CONT_UI = "user_id";
     public static final String COLUMN_CONT_PI = "panel_id";
     public static final String COLUMN_CONT_TC = "type_content";
+
+    public static final String COLUMN_VER = "version";
+    public static final String COLUMN_ORI = "orientation";
+    public static final String COLUMN_VER_ID = "idVer";
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, SCHEMA);
@@ -49,12 +54,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 COLUMN_CONT_UI + " TEXT, " +
                 COLUMN_CONT_PI + " TEXT, " +
                 COLUMN_CONT_TC + " TEXT);");
+
+        db.execSQL("CREATE TABLE " + TABLE_VERSION + " (" + COLUMN_VER_ID  + " TEXT," + COLUMN_VER + " TEXT," + COLUMN_ORI + " TEXT);");
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_CONTENT);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_VERSION);
         onCreate(db);
     }
 }

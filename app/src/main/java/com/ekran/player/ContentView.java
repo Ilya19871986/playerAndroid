@@ -31,7 +31,7 @@ public class ContentView extends AppCompatActivity {
     // количество файлов
     private static int countFile = 0;
     ArrayList<String>  listVideo = new ArrayList<>();
-    private  static Api api = null;
+    private static Api api = null;
 
     public static int flag = 0;
 
@@ -103,8 +103,15 @@ public class ContentView extends AppCompatActivity {
 
     @Override
     protected void onStart() {
-        super.onStart();
-        initializePlayer();
+        try
+        {
+            super.onStart();
+            initializePlayer();
+        }
+        catch (Exception exception) {
+            Log.e("onStart", exception.getMessage());
+        }
+
     }
 
     @Override
@@ -117,7 +124,8 @@ public class ContentView extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-        api = new Api();
+
+        api = new Api(this);
 
         List<User> users = adapter.getUsers();
         user = users.get(1);
@@ -137,8 +145,9 @@ public class ContentView extends AppCompatActivity {
                     @Override
                     public void run() {
                         api.RefreshToken(user.getUsername(), user.getPassword(), user.getPanelName());
+                        api.checkVersion();
                     }
-                }, 0, 1000 * 60 * 60
+                }, 0, 1000  * 5//* 60 * 60
         );
 
          final Timer getContentVideo = new Timer();

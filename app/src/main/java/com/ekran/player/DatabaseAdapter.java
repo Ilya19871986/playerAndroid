@@ -9,6 +9,7 @@ import android.util.Log;
 
 import com.ekran.player.model.Content;
 import com.ekran.player.model.User;
+import com.ekran.player.model.Version;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +37,11 @@ public class DatabaseAdapter {
         return  database.query(DatabaseHelper.TABLE, columns, null, null, null, null, null);
     }
 
+    private Cursor getVersion() {
+        String[] columns = new String[] {DatabaseHelper.COLUMN_VER_ID, DatabaseHelper.COLUMN_VER, DatabaseHelper.COLUMN_ORI};
+        return database.query(DatabaseHelper.TABLE_VERSION, columns, null, null, null, null, null);
+    }
+
     private Cursor getAllContent() {
         String[] columns = new String[] {DatabaseHelper.COLUMN_CONT_ID, DatabaseHelper.COLUMN_CONT_FN, DatabaseHelper.COLUMN_CONT_FS,
                 DatabaseHelper.COLUMN_CONT_SY, DatabaseHelper.COLUMN_CONT_DE, DatabaseHelper.COLUMN_CONT_ED,
@@ -48,6 +54,20 @@ public class DatabaseAdapter {
         for (Content c : contents) {
             Log.e("content: ", c.toString());
         }
+    }
+
+    public List<Version> getVers() {
+        ArrayList<Version> versions = new ArrayList<>();
+        Cursor cursor = getVersion();
+        if (cursor.moveToFirst()) {
+            do {
+                int id = cursor.getInt(cursor.getColumnIndex(DatabaseHelper.COLUMN_VER_ID));
+                String version = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COLUMN_VER));
+                String orientation = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COLUMN_ORI));
+                versions.add(new Version(id, version, orientation));
+            }  while (cursor.moveToNext());
+        }
+        return versions;
     }
 
     public List<Content> getContent() {
@@ -123,6 +143,16 @@ public class DatabaseAdapter {
         return  database.insert(DatabaseHelper.TABLE, null, cv);
     }
 
+    public long insertVersion(Version version) {
+        ContentValues cv = new ContentValues();
+
+        cv.put(DatabaseHelper.COLUMN_VER_ID, version.getId());
+        cv.put(DatabaseHelper.COLUMN_VER, version.getVersion());
+        cv.put(DatabaseHelper.COLUMN_ORI, version.getVersion());
+
+        return  database.insert(DatabaseHelper.TABLE_VERSION, null, cv);
+    }
+
     public long insertContent(Content content) {
         ContentValues cv = new ContentValues();
 
@@ -144,6 +174,8 @@ public class DatabaseAdapter {
         return database.delete(DatabaseHelper.TABLE_CONTENT, whereClause, whereArgs);
     }
 
+    public void delVersion() {database.delete(DatabaseHelper.TABLE_VERSION, null, null); }
+
     public void delAllContent() {
         database.delete(DatabaseHelper.TABLE_CONTENT, null, null);
     }
@@ -158,7 +190,7 @@ public class DatabaseAdapter {
         return database.delete(DatabaseHelper.TABLE, whereClause, whereArgs);
     }
 
-    public long update(User user){
+    public long update(User user) {
 
         String whereClause = DatabaseHelper.COLUMN_ID + "=" + String.valueOf(user.getId());
         ContentValues cv = new ContentValues();
@@ -170,5 +202,16 @@ public class DatabaseAdapter {
         cv.put(DatabaseHelper.COLUMN_PANELNAME, user.getPanelName());
 
         return database.update(DatabaseHelper.TABLE, cv, whereClause, null);
+    }
+
+    public long updateVersion(Version version) {
+        String whereClause = DatabaseHelper.COLUMN_VER_ID + "=" + String.valueOf(version.getId());
+        ContentValues cv = new ContentValues();
+
+        cv.put(DatabaseHelper.COLUMN_VER_ID, version.getId());
+        cv.put(DatabaseHelper.COLUMN_VER, version.getVersion());
+        cv.put(DatabaseHelper.COLUMN_ORI,  version.getOrientation());
+
+        return database.update(DatabaseHelper.TABLE_VERSION, cv, whereClause, null);
     }
 }

@@ -5,11 +5,14 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.VersionedPackage;
 import android.util.Log;
+import android.view.Gravity;
 import android.widget.Toast;
 
 import com.ekran.player.model.Content;
 import com.ekran.player.model.User;
+import com.ekran.player.model.Version;
 import com.google.gson.Gson;
 import com.google.gson.internal.$Gson$Preconditions;
 import com.google.gson.reflect.TypeToken;
@@ -31,9 +34,11 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 import static com.ekran.player.MainActivity.adapter;
+import static com.ekran.player.MainActivity.version;
 
 public class Api {
   private final String apiAddr = "http://193.124.58.144:4444";
+    private final Context context;
     OkHttpClient httpClient = new OkHttpClient();
     String serverUsername = null;
     String serverToken = null;
@@ -44,7 +49,8 @@ public class Api {
 
     String panel = null;
 
-    public Api() {
+    public Api(Context context) {
+        this.context = context;
     }
 
     FtpLoader ftpLoader = new FtpLoader();
@@ -104,6 +110,10 @@ public class Api {
                       user.setId(Long.parseLong(panelId));
                       long x = adapter.insert(user);
                       Log.e("id ", panelId);
+                      //int duration = Toast.LENGTH_LONG;
+                      //Toast toast = Toast.makeText(MainActivity.this, "Плеер зарегистрирован", duration);
+                      //toast.setGravity(Gravity.TOP, 0, 0);
+                      //toast.show();
                   } catch (Exception e){
                       e.printStackTrace();
                   }
@@ -169,12 +179,7 @@ public class Api {
                   try {
                       Gson gson = new Gson();
                       List<Content> list = gson.fromJson(mMessage, new TypeToken<List<Content>>() {}.getType());
-                      //adapter.delAllContent();
-                      for (Content c : list) {
-                          ftpLoader.uploadFile(getPanelName(), "Видео", c.getFile_name(), c.getId());
-                          adapter.insertContent(c);
-                      }
-                      //adapter.PrintContent();
+                      ftpLoader.uploadFileV2(getPanelName(), "Видео", list);
                       setConnectTime(id);
                       Log.e("Количество файлов: ", String.valueOf(adapter.getCountContent()));
                   } catch (Exception e){
@@ -187,7 +192,6 @@ public class Api {
   // установка sync = 1
   public void setUploadedFile(int id) {
       List<User> users = adapter.getUsers();
-      String token = users.get(1).getToken();
 
       HttpUrl.Builder httpBuilder = HttpUrl.parse(apiAddr +
               "/panel/endUploadingFile?id=" + id).newBuilder();
@@ -216,6 +220,48 @@ public class Api {
           }
       });
   }
+
+    public void checkVersion() {
+        List<User> users = adapter.getUsers();
+        String token = users.get(1).getToken();
+
+        HttpUrl.Builder httpBuilder = HttpUrl.parse(apiAddr +
+                "/panel/checkNewVersion?PanelId=" + users.get(1).getId()).newBuilder();
+        Request requestContent = new Request.Builder()
+                .url(httpBuilder.build())
+                .header("Authorization", "Bearer " + BearerToken)
+                .build();
+
+        httpClient.newCall(requestContent).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                String mMessage = e.getMessage();
+                Log.e("failure Response", mMessage);
+                call.cancel();
+            }
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                String mMessage = response.body().string();
+                if (response.isSuccessful()){
+                    try {
+                        JSONObject json = new JSONObject(mMessage);
+                        String newVersion = json.getString("player_version");
+                        String orientation = json.getString("only_vip");
+                        if (Long.valueOf(newVersion.replace(".", "")) > Long.valueOf(version.replace(".", ""))) {
+                            // устанавливаем новую версию и ориентацию
+                            adapter.updateVersion(new Version(1, newVersion, orientation));
+                            Log.e("newversion", newVersion);
+                        }
+                        Version version = adapter.getVers().get(0);
+                        Log.e("ver", version.getVersion() + ":" + version.getOrientation());
+
+                    } catch (Exception e){
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+    }
 
   public String getPanelName() {
       List<User> users = adapter.getUsers();
