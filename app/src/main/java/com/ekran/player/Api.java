@@ -38,7 +38,7 @@ import static com.ekran.player.MainActivity.version;
 
 public class Api {
   private final String apiAddr = "http://193.124.58.144:4444";
-    private final Context context;
+
     OkHttpClient httpClient = new OkHttpClient();
     String serverUsername = null;
     String serverToken = null;
@@ -49,8 +49,7 @@ public class Api {
 
     String panel = null;
 
-    public Api(Context context) {
-        this.context = context;
+    public Api() {
     }
 
     FtpLoader ftpLoader = new FtpLoader();
@@ -179,7 +178,8 @@ public class Api {
                   try {
                       Gson gson = new Gson();
                       List<Content> list = gson.fromJson(mMessage, new TypeToken<List<Content>>() {}.getType());
-                      ftpLoader.uploadFileV2(getPanelName(), "Видео", list);
+                      if (list.size() > 0)
+                        ftpLoader.uploadFileV2(getPanelName(), "Видео", list);
                       setConnectTime(id);
                       Log.e("Количество файлов: ", String.valueOf(adapter.getCountContent()));
                   } catch (Exception e){
@@ -247,14 +247,17 @@ public class Api {
                         JSONObject json = new JSONObject(mMessage);
                         String newVersion = json.getString("player_version");
                         String orientation = json.getString("only_vip");
-                        if (Long.valueOf(newVersion.replace(".", "")) > Long.valueOf(version.replace(".", ""))) {
+                        version = adapter.getVers().get(0).getVersion();
+                        adapter.updateVersion(new Version(1, newVersion, orientation));
+                        if (Long.parseLong(newVersion.replace(".", "")) > Long.parseLong(version.replace(".", ""))) {
                             // устанавливаем новую версию и ориентацию
                             adapter.updateVersion(new Version(1, newVersion, orientation));
-                            Log.e("newversion", newVersion);
+                            FtpLoader ftpLoader = new FtpLoader();
+                            ftpLoader.uploadNewVersion(getPanelName());
                         }
                         Version version = adapter.getVers().get(0);
                         Log.e("ver", version.getVersion() + ":" + version.getOrientation());
-
+                        //Log.e("new app!!!!!!!!!", "ok");
                     } catch (Exception e){
                         e.printStackTrace();
                     }

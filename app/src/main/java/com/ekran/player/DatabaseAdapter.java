@@ -148,7 +148,7 @@ public class DatabaseAdapter {
 
         cv.put(DatabaseHelper.COLUMN_VER_ID, version.getId());
         cv.put(DatabaseHelper.COLUMN_VER, version.getVersion());
-        cv.put(DatabaseHelper.COLUMN_ORI, version.getVersion());
+        cv.put(DatabaseHelper.COLUMN_ORI, version.getOrientation());
 
         return  database.insert(DatabaseHelper.TABLE_VERSION, null, cv);
     }

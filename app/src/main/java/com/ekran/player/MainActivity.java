@@ -6,28 +6,25 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import com.ekran.player.model.Content;
 import com.ekran.player.model.User;
 import com.ekran.player.model.Version;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.channels.FileChannel;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -35,12 +32,14 @@ public class MainActivity extends AppCompatActivity {
     private long userId=0;
     public static User user = null;
     public static String version = "3.0.0";
+    public static String orientation = "0";
+    public static int statusFtp = 0; // 1 - идет загрузка
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder(); StrictMode.setVmPolicy(builder.build());
         Intent intent = new Intent(this, ContentView.class);
 
         adapter = new DatabaseAdapter(this);
@@ -48,12 +47,30 @@ public class MainActivity extends AppCompatActivity {
         //List<Version> versions = adapter.getVers(); Log.e("ver", versions.get(0).getVersion());
         //adapter.insertVersion(new Version(1, "3.0.0", "0"));
         //adapter.updateVersion(new Version(1, "3.0.0", "0"));
+        //updateApp();
 
-
-        //adapter.delAllContent(); adapter.delAllUser();
+         //adapter.delAllContent(); adapter.delAllUser(); adapter.delVersion();
         // если есть авторизация
         if (adapter.getCount() != 0)  {
             startActivity(intent);
+        }
+        //updateApp();
+    }
+
+    public void updateApp() {
+        try {
+            File file = new File("/data/data/com.ekran.player/files/apprelease.apk");
+            if (file.exists()) {
+
+                file.setReadable(true, false);
+                Intent intent = new Intent(Intent.ACTION_VIEW);
+                intent.setDataAndType(Uri.fromFile(file), "application/vnd.android.package-archive");
+                startActivity(intent);
+                Log.e("update", "ok");
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -63,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
         EditText panelName = (EditText) findViewById(R.id.panelName);
         Button button = (Button) findViewById(R.id.entering);
         copyFile();
-        Api api = new Api(this);
+        Api api = new Api();
         api.AuthCreatePanel(login.getText().toString(), pass.getText().toString(), panelName.getText().toString());
         // начальная установка версии и ориентации
         adapter.insertVersion(new Version(1, version, "0"));
@@ -81,14 +98,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void copyFile() throws IOException {
-        InputStream is = getResources().openRawResource(R.raw.krug);
-        byte[] buffer = new byte[is.available()];
         File folder = new File("/data/data/com.ekran.player/files");
         if (!folder.exists()) folder.mkdirs();
-        OutputStream os = new FileOutputStream(new File("/data/data/com.ekran.player/files/krug.mp4"));
-        is.read(buffer, 0, buffer.length);
-        os.write(buffer, 0, buffer.length);
-        is.close(); os.close(); is = null; os = null;
+            InputStream is = getResources().openRawResource(R.raw.g);
+            byte[] buffer = new byte[is.available()];
+            OutputStream os = new FileOutputStream(new File("/data/data/com.ekran.player/files/g.mp4"));
+            is.read(buffer, 0, buffer.length);
+            os.write(buffer, 0, buffer.length);
+            is.close(); os.close(); is = null; os = null;
+
+            is = getResources().openRawResource(R.raw.v);
+            buffer = new byte[is.available()];
+            os = new FileOutputStream(new File("/data/data/com.ekran.player/files/v.mp4"));
+            is.read(buffer, 0, buffer.length);
+            os.write(buffer, 0, buffer.length);
+            is.close(); os.close(); is = null; os = null;
+
     }
 
     @Override
