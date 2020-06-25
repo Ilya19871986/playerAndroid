@@ -26,9 +26,11 @@ import java.io.OutputStream;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import static com.ekran.player.Api.reload;
+
 public class MainActivity extends AppCompatActivity {
 
-    public static DatabaseAdapter adapter;
+    public static DatabaseAdapter adapter = null;
     private long userId=0;
     public static User user = null;
     public static String version = "3.0.0";
@@ -41,9 +43,9 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder(); StrictMode.setVmPolicy(builder.build());
         Intent intent = new Intent(this, ContentView.class);
-
         adapter = new DatabaseAdapter(this);
         adapter.open();
+
         //List<Version> versions = adapter.getVers(); Log.e("ver", versions.get(0).getVersion());
         //adapter.insertVersion(new Version(1, "3.0.0", "0"));
         //adapter.updateVersion(new Version(1, "3.0.0", "0"));
@@ -55,6 +57,23 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         }
         //updateApp();
+        /*
+        final Timer reloadAfterChangeSettings = new Timer();
+        reloadAfterChangeSettings.schedule(
+                new TimerTask() {
+                    @Override
+                    public void run() {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (reload) {
+                                    reload = false;
+                                    restart();
+                                }
+                            }
+                        });
+                    }},0,1000 * 60
+                );*/
     }
 
     public void updateApp() {
@@ -79,19 +98,26 @@ public class MainActivity extends AppCompatActivity {
         EditText pass = (EditText) findViewById(R.id.pass);
         EditText panelName = (EditText) findViewById(R.id.panelName);
         Button button = (Button) findViewById(R.id.entering);
-        copyFile();
-        Api api = new Api();
-        api.AuthCreatePanel(login.getText().toString(), pass.getText().toString(), panelName.getText().toString());
-        // начальная установка версии и ориентации
-        adapter.insertVersion(new Version(1, version, "0"));
-        button.setClickable(false);
+        if (login.getText().toString() != "" && pass.getText().toString() != "" && panelName.getText().toString() != "") {
+            copyFile();
+            Api api = new Api();
+            api.AuthCreatePanel(login.getText().toString(), pass.getText().toString(), panelName.getText().toString());
+            // начальная установка версии и ориентации
+            adapter.insertVersion(new Version(1, version, "0", "5"));
+            button.setClickable(false);
+            restart();
+        }
+    }
+
+    private void restart() {
         Toast toast = Toast.makeText(getApplicationContext(),
                 "Перезагрузка!", Toast.LENGTH_LONG);
         toast.show();
 
         Intent mStartActivity = new Intent(this, MainActivity.class);
         int mPendingIntentId = 123456;
-        PendingIntent mPendingIntent = PendingIntent.getActivity(this, mPendingIntentId,    mStartActivity, PendingIntent.FLAG_CANCEL_CURRENT);
+        PendingIntent mPendingIntent = PendingIntent.getActivity(this, mPendingIntentId,
+                mStartActivity, PendingIntent.FLAG_CANCEL_CURRENT);
         AlarmManager mgr = (AlarmManager)this.getSystemService(Context.ALARM_SERVICE);
         mgr.set(AlarmManager.RTC, System.currentTimeMillis() + 100, mPendingIntent);
         finish();
@@ -113,7 +139,6 @@ public class MainActivity extends AppCompatActivity {
             is.read(buffer, 0, buffer.length);
             os.write(buffer, 0, buffer.length);
             is.close(); os.close(); is = null; os = null;
-
     }
 
     @Override

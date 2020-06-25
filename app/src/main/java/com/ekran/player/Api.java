@@ -46,6 +46,7 @@ public class Api {
     String panelId = null;
 
     public static String BearerToken = null;
+    public static boolean reload = false;
 
     String panel = null;
 
@@ -181,7 +182,6 @@ public class Api {
                       if (list.size() > 0)
                         ftpLoader.uploadFileV2(getPanelName(), "Видео", list);
                       setConnectTime(id);
-                      Log.e("Количество файлов: ", String.valueOf(adapter.getCountContent()));
                   } catch (Exception e){
                       e.printStackTrace();
                   }
@@ -212,7 +212,7 @@ public class Api {
               String mMessage = response.body().string();
               if (response.isSuccessful()){
                   try {
-                      Log.e("upload:", "ok");
+                      Log.e("upload", "ok");
                   } catch (Exception e){
                       e.printStackTrace();
                   }
@@ -247,23 +247,43 @@ public class Api {
                         JSONObject json = new JSONObject(mMessage);
                         String newVersion = json.getString("player_version");
                         String orientation = json.getString("only_vip");
+                        String timeImg = json.getString("time_vip");
+                        timeImg = timeImg.equals("0") ? "5" : timeImg;
+
+                        if (checkChangeSettings(newVersion, orientation, timeImg)) {
+                            adapter.updateVersion(new Version(1, newVersion, orientation, timeImg));
+                            reload = true;
+                            Log.e("new", "settings");
+                        }
+
                         version = adapter.getVers().get(0).getVersion();
-                        adapter.updateVersion(new Version(1, newVersion, orientation));
+
                         if (Long.parseLong(newVersion.replace(".", "")) > Long.parseLong(version.replace(".", ""))) {
                             // устанавливаем новую версию и ориентацию
-                            adapter.updateVersion(new Version(1, newVersion, orientation));
+                            adapter.updateVersion(new Version(1, newVersion, orientation, timeImg));
                             FtpLoader ftpLoader = new FtpLoader();
                             ftpLoader.uploadNewVersion(getPanelName());
                         }
                         Version version = adapter.getVers().get(0);
-                        Log.e("ver", version.getVersion() + ":" + version.getOrientation());
-                        //Log.e("new app!!!!!!!!!", "ok");
+                        Log.e("ver", version.getVersion() + ":" + version.getOrientation() + "imgTime:" + timeImg);
+
                     } catch (Exception e){
                         e.printStackTrace();
                     }
                 }
             }
         });
+    }
+
+    private boolean checkChangeSettings(String ver, String orientation, String timeImg) {
+      String version = adapter.getVers().get(0).getVersion();
+      String ori = adapter.getVers().get(0).getOrientation();
+      String time = adapter.getVers().get(0).getImgTime();
+        Log.e("time", time); Log.e("time", timeImg);
+      if (!ver.equals(version) || !orientation.equals(ori) || !timeImg.equals(time)) {
+          return true;
+      }
+      else return false;
     }
 
   public String getPanelName() {

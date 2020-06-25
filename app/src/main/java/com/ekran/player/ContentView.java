@@ -1,34 +1,45 @@
 package com.ekran.player;
 
-import androidx.appcompat.app.AppCompatActivity;
-
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Context;
-import android.content.pm.ActivityInfo;
-import android.content.res.Configuration;
+import android.content.Intent;
+import android.graphics.Color;
 import android.graphics.SurfaceTexture;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
+import android.widget.ImageSwitcher;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
-import android.widget.VideoView;
+import android.widget.ViewSwitcher;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.ekran.player.model.User;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static android.media.MediaPlayer.*;
+import static android.media.MediaPlayer.OnCompletionListener;
+import static com.ekran.player.Api.reload;
 import static com.ekran.player.MainActivity.adapter;
 import static com.ekran.player.MainActivity.orientation;
 import static com.ekran.player.MainActivity.user;
@@ -36,14 +47,35 @@ import static com.ekran.player.MainActivity.user;
 public class ContentView extends AppCompatActivity  implements
         TextureView.SurfaceTextureListener {
 
-    TextureView videoPlayer;
-    MediaPlayer mp;
+    private TextureView videoPlayer;
+    private MediaPlayer mp;
+
+    private ImageSwitcher mImageSwitcher;
+    private int imgCurIndex = 0;
+    private int imgCount = 0;
+    private List<String> mImage = new ArrayList<>();
+    ImageView imageView;
+    long imgTime;
+    private int firstStart = 0;
+
+    private int flag = 0;
+
     // текущий файл
     private static int currentFile = 0;
     // количество файлов
     private static int countFile = 0;
     ArrayList<String>  listVideo = new ArrayList<>();
     private static Api api = null;
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event)
+    {
+        if(keyCode == KeyEvent.KEYCODE_BACK)
+        {
+            Log.e("key", "back");
+        }
+        return true;
+    }
 
     private ArrayList<String> getListVideo() {
         final File rootDir = new File("/data/data/com.ekran.player/files");
@@ -53,22 +85,45 @@ public class ContentView extends AppCompatActivity  implements
         for (File f : filesArray) {
             if (f.isFile() && !f.getName().contains("_ftp") && f.getName().contains("mp4") &&
                     !f.getName().contains("g.mp4") && !f.getName().contains("v.mp4")) {
-                Log.e("file", f.getName());
                 list.add(f.getName());
                 countFile++;
             }
         }
-        if (countFile == 0) {
+        if (countFile == 0 ) {
             list.add(orientation.equals("0") ? "g.mp4" : "v.mp4");
             countFile = 1;
         }
         countFile--;
+        Collections.sort(list);
+        return list;
+    }
+
+    private ArrayList<String> getListImg() {
+        final File rootDir = new File("/data/data/com.ekran.player/files");
+        ArrayList<String> list = new ArrayList<>();
+        File[] filesArray = rootDir.listFiles();
+        imgCount = 0;
+        for (File f : filesArray) {
+            if (f.isFile() && !f.getName().contains("_ftp") &&
+                    (f.getName().contains(".png") ||
+                    f.getName().contains(".jpg") || f.getName().contains(".jpeg"))
+                ) {
+                list.add(f.getName());
+                imgCount++;
+            }
+        }
+        imgCount--;
+        Collections.sort(list);
         return list;
     }
 
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
         mp.setSurface(new Surface(surface));
-        if (orientation.equals("1"))  updateTextureViewScaling(width,height);
+        if (orientation.equals("1")) {
+            updateTextureViewScaling(width,height);
+            updateImgViewScaling(width,height);
+        }
+
         mp.setOnCompletionListener(new OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
@@ -76,14 +131,27 @@ public class ContentView extends AppCompatActivity  implements
                     listVideo = getListVideo();
                     if (currentFile >= countFile) {
                         currentFile = 0;
+
+                        if (mImage.size() > 0) {
+                            flag = 1;
+                            mp.stop();
+                            mp.reset();
+                            mp.setDataSource("/data/data/com.ekran.player/files/" + listVideo.get(currentFile));
+                            mp.prepare();
+                            //setImg(imgCurIndex);
+                            //imgCurIndex++;
+                        }
                     }
                     else {
                         currentFile++;
                     }
-                    mp.reset();
-                    mp.setDataSource("/data/data/com.ekran.player/files/" + listVideo.get(currentFile));
-                    mp.prepare();
-                    mp.start();
+                    if (flag == 0) {
+                        mp.reset();
+                        mp.setDataSource("/data/data/com.ekran.player/files/" + listVideo.get(currentFile));
+                        mp.prepare();
+                        mp.start();
+                    }
+
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -91,12 +159,24 @@ public class ContentView extends AppCompatActivity  implements
         });
     }
 
+    private void setImg(int idx) {
+        Uri uri = Uri.fromFile(new File("/data/data/com.ekran.player/files/" + mImage.get(idx)));
+        mImageSwitcher.setImageURI(uri);
+    }
     private void updateTextureViewScaling(int viewWidth, int viewHeight) {
         FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) videoPlayer.getLayoutParams();
         params.width = viewHeight;
         params.height = viewWidth;
         params.gravity = Gravity.CENTER;
         videoPlayer.setLayoutParams(params);
+    }
+
+    private void updateImgViewScaling(int viewWidth, int viewHeight) {
+        FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) mImageSwitcher.getLayoutParams();
+        params.width = viewHeight;
+        params.height = viewWidth;
+        params.gravity = Gravity.CENTER;
+        mImageSwitcher.setLayoutParams(params);
     }
 
     @Override
@@ -119,8 +199,10 @@ public class ContentView extends AppCompatActivity  implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        setContentView(R.layout.activity_content_view);
+
         api = new Api();
-        api.checkVersion();
+        //api.checkVersion();
 
         List<User> users = adapter.getUsers();
         user = users.get(1);
@@ -128,9 +210,44 @@ public class ContentView extends AppCompatActivity  implements
         orientation = String.valueOf(adapter.getVers().get(0).getOrientation());
         // orientation = "1";
 
-        setContentView(R.layout.activity_content_view);
+        mImageSwitcher = (ImageSwitcher) findViewById(R.id.imageSwitcher);
+        /* анимация -- 1
+        Animation slideInLeftAnimation = AnimationUtils.loadAnimation(this,
+                android.R.anim.slide_in_left);
+        Animation slideOutRight = AnimationUtils.loadAnimation(this,
+                android.R.anim.slide_out_right);
+        slideOutRight.setDuration(1500);
+        slideInLeftAnimation.setDuration(1500);
+        mImageSwitcher.setInAnimation(slideInLeftAnimation);
+        mImageSwitcher.setOutAnimation(slideOutRight); */
+        // -------
+        // анимация -- 2
+        Animation inAnimation = new AlphaAnimation(0, 1);
+        inAnimation.setDuration(2000);
+        Animation outAnimation = new AlphaAnimation(1, 0);
+        outAnimation.setDuration(2000);
+        mImageSwitcher.setInAnimation(inAnimation);
+        mImageSwitcher.setOutAnimation(outAnimation);
+        // -------
+        mImageSwitcher.setFactory(new ViewSwitcher.ViewFactory() {
+
+            @Override
+            public View makeView() {
+
+                imageView = new ImageView(ContentView.this);
+
+                imageView.setScaleType(ImageView.ScaleType.FIT_XY);
+
+                FrameLayout.LayoutParams params = new ImageSwitcher.LayoutParams(
+                        LinearLayout.LayoutParams.FILL_PARENT, LinearLayout.LayoutParams.FILL_PARENT);
+
+                imageView.setLayoutParams(params);
+                return imageView;
+            }
+        });
 
         listVideo = getListVideo();
+        mImage = getListImg();
 
         videoPlayer =  (TextureView) findViewById(R.id.videoPlayer);
         videoPlayer.setSurfaceTextureListener((TextureView.SurfaceTextureListener) this);
@@ -142,6 +259,7 @@ public class ContentView extends AppCompatActivity  implements
         else {
             // setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
             videoPlayer.setRotation(-90);
+            mImageSwitcher.setRotation(-90);
         }
 
         mp = new MediaPlayer();
@@ -155,6 +273,7 @@ public class ContentView extends AppCompatActivity  implements
         }
 
         user = adapter.getUser(1);
+        imgTime = Long.parseLong(adapter.getVers().get(0).getImgTime());
 
         final Timer refreshTokenTimer = new Timer();
         refreshTokenTimer.schedule(
@@ -177,5 +296,60 @@ public class ContentView extends AppCompatActivity  implements
                      }
                  }, 0, 1000 * 60 //* 5
          );
+
+        final Timer nextImg = new Timer();
+        nextImg.schedule(
+                new TimerTask() {
+                    @Override
+                    public void run() {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mImage = getListImg();
+                                if (imgCurIndex <= imgCount && flag == 1 && imgCount >= 0) {
+                                    videoPlayer.setVisibility(View.GONE);
+                                    // при старте если только одна картинка
+                                    if (firstStart == 0 && flag == 1)  setImg(imgCurIndex);
+                                    // если одна картинка
+                                    if (!(listVideo.size() == 0) && !(mImage.size() == 1)) {
+                                        setImg(imgCurIndex);
+                                        firstStart  = 1;
+                                    }
+                                    imgCurIndex++;
+                                }
+                                else {
+                                    imgCurIndex = 0;
+                                    listVideo = getListVideo();
+                                    if (listVideo.size() == 1  && mImage.size() != 0 && ((listVideo.get(0).contains("g.mp4")) || (listVideo.get(0).contains("v.mp4")))) {
+                                        Log.e("0 video",  "restart img: " + mImage.size());
+                                        mImage = getListImg();
+                                        if (mImage.size() == 0) {
+                                            flag = 0;
+                                        }
+                                    }
+                                    else {
+                                        if (flag == 1) {
+                                            flag = 0;
+                                            try {
+                                                mp.reset();
+                                                mp.setDataSource("/data/data/com.ekran.player/files/" + listVideo.get(0));
+                                                mp.prepare();
+                                                mp.start();
+                                                videoPlayer.setVisibility(View.VISIBLE);
+                                            } catch (IOException e) {
+                                                e.printStackTrace();
+                                            }
+                                        }
+                                        mImageSwitcher.setImageURI(null);
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }, 0, 1000  * imgTime
+        );
+/*
+
+*/
     }
 }

@@ -38,7 +38,7 @@ public class DatabaseAdapter {
     }
 
     private Cursor getVersion() {
-        String[] columns = new String[] {DatabaseHelper.COLUMN_VER_ID, DatabaseHelper.COLUMN_VER, DatabaseHelper.COLUMN_ORI};
+        String[] columns = new String[] {DatabaseHelper.COLUMN_VER_ID, DatabaseHelper.COLUMN_VER, DatabaseHelper.COLUMN_ORI, DatabaseHelper.COLUMN_TIME_IMG};
         return database.query(DatabaseHelper.TABLE_VERSION, columns, null, null, null, null, null);
     }
 
@@ -64,7 +64,8 @@ public class DatabaseAdapter {
                 int id = cursor.getInt(cursor.getColumnIndex(DatabaseHelper.COLUMN_VER_ID));
                 String version = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COLUMN_VER));
                 String orientation = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COLUMN_ORI));
-                versions.add(new Version(id, version, orientation));
+                String imgTime = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COLUMN_TIME_IMG));
+                versions.add(new Version(id, version, orientation, imgTime));
             }  while (cursor.moveToNext());
         }
         return versions;
@@ -149,6 +150,7 @@ public class DatabaseAdapter {
         cv.put(DatabaseHelper.COLUMN_VER_ID, version.getId());
         cv.put(DatabaseHelper.COLUMN_VER, version.getVersion());
         cv.put(DatabaseHelper.COLUMN_ORI, version.getOrientation());
+        cv.put(DatabaseHelper.COLUMN_TIME_IMG, version.getImgTime());
 
         return  database.insert(DatabaseHelper.TABLE_VERSION, null, cv);
     }
@@ -211,6 +213,7 @@ public class DatabaseAdapter {
         cv.put(DatabaseHelper.COLUMN_VER_ID, version.getId());
         cv.put(DatabaseHelper.COLUMN_VER, version.getVersion());
         cv.put(DatabaseHelper.COLUMN_ORI,  version.getOrientation());
+        cv.put(DatabaseHelper.COLUMN_TIME_IMG,  version.getImgTime());
 
         return database.update(DatabaseHelper.TABLE_VERSION, cv, whereClause, null);
     }
