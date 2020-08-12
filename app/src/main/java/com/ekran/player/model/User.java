@@ -45,6 +45,10 @@ public class User {
         this.token = token;
     }
 
+    public  void setPassword(String newPassword) {
+        this.password = newPassword;
+    }
+
     public String getPanelName() {
         return panelName;
     }

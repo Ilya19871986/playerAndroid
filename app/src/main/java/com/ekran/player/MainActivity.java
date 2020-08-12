@@ -23,6 +23,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -36,12 +37,13 @@ public class MainActivity extends AppCompatActivity {
     public static String version = "3.0.0";
     public static String orientation = "0";
     public static int statusFtp = 0; // 1 - идет загрузка
+    public  static  String BearerToken = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder(); StrictMode.setVmPolicy(builder.build());
+        //StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder(); StrictMode.setVmPolicy(builder.build());
         Intent intent = new Intent(this, ContentView.class);
         adapter = new DatabaseAdapter(this);
         adapter.open();
@@ -53,7 +55,10 @@ public class MainActivity extends AppCompatActivity {
 
          //adapter.delAllContent(); adapter.delAllUser(); adapter.delVersion();
         // если есть авторизация
-        if (adapter.getCount() != 0)  {
+        if (adapter.getCount() > 0)  {
+            List<User> users = adapter.getUsers();
+             BearerToken = users.get(1).getToken();
+             Log.e("token", BearerToken);
             startActivity(intent);
         }
         //updateApp();
@@ -98,13 +103,15 @@ public class MainActivity extends AppCompatActivity {
         EditText pass = (EditText) findViewById(R.id.pass);
         EditText panelName = (EditText) findViewById(R.id.panelName);
         Button button = (Button) findViewById(R.id.entering);
+
         if (login.getText().toString() != "" && pass.getText().toString() != "" && panelName.getText().toString() != "") {
+            button.setClickable(false);
             copyFile();
             Api api = new Api();
             api.AuthCreatePanel(login.getText().toString(), pass.getText().toString(), panelName.getText().toString());
             // начальная установка версии и ориентации
             adapter.insertVersion(new Version(1, version, "0", "5"));
-            button.setClickable(false);
+
             restart();
         }
     }

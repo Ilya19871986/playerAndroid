@@ -48,6 +48,7 @@ public class ContentView extends AppCompatActivity  implements
         TextureView.SurfaceTextureListener {
 
     private TextureView videoPlayer;
+    //private Animation animationVideo;
     private MediaPlayer mp;
 
     private ImageSwitcher mImageSwitcher;
@@ -131,14 +132,17 @@ public class ContentView extends AppCompatActivity  implements
                     listVideo = getListVideo();
                     if (currentFile >= countFile) {
                         currentFile = 0;
-
                         if (mImage.size() > 0) {
                             flag = 1;
+                            videoPlayer.setVisibility(View.GONE);
                             mp.stop();
                             mp.reset();
                             mp.setDataSource("/data/data/com.ekran.player/files/" + listVideo.get(currentFile));
                             mp.prepare();
-                            //setImg(imgCurIndex);
+                            mp.start();
+                            mp.pause();
+                            mImage = getListImg();
+                            setImg(0);
                             //imgCurIndex++;
                         }
                     }
@@ -149,9 +153,9 @@ public class ContentView extends AppCompatActivity  implements
                         mp.reset();
                         mp.setDataSource("/data/data/com.ekran.player/files/" + listVideo.get(currentFile));
                         mp.prepare();
+                        //videoPlayer.startAnimation(animationVideo);
                         mp.start();
                     }
-
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -202,7 +206,8 @@ public class ContentView extends AppCompatActivity  implements
         setContentView(R.layout.activity_content_view);
 
         api = new Api();
-        //api.checkVersion();
+        //animationVideo = new AlphaAnimation(0, 1);
+        //animationVideo.setDuration(2000);
 
         List<User> users = adapter.getUsers();
         user = users.get(1);
@@ -223,9 +228,9 @@ public class ContentView extends AppCompatActivity  implements
         // -------
         // анимация -- 2
         Animation inAnimation = new AlphaAnimation(0, 1);
-        inAnimation.setDuration(2000);
+        inAnimation.setDuration(1000);
         Animation outAnimation = new AlphaAnimation(1, 0);
-        outAnimation.setDuration(2000);
+        outAnimation.setDuration(1000);
         mImageSwitcher.setInAnimation(inAnimation);
         mImageSwitcher.setOutAnimation(outAnimation);
         // -------
@@ -251,7 +256,7 @@ public class ContentView extends AppCompatActivity  implements
 
         videoPlayer =  (TextureView) findViewById(R.id.videoPlayer);
         videoPlayer.setSurfaceTextureListener((TextureView.SurfaceTextureListener) this);
-
+        videoPlayer.setAnimation(outAnimation);
         if (orientation.equals("0") || orientation == null) {
             //setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
             //videoPlayer.setRotation(0);
@@ -275,7 +280,7 @@ public class ContentView extends AppCompatActivity  implements
         user = adapter.getUser(1);
         imgTime = Long.parseLong(adapter.getVers().get(0).getImgTime());
 
-        final Timer refreshTokenTimer = new Timer();
+        /*final Timer refreshTokenTimer = new Timer();
         refreshTokenTimer.schedule(
                 new TimerTask() {
                     @Override
@@ -283,7 +288,7 @@ public class ContentView extends AppCompatActivity  implements
                         api.RefreshToken(user.getUsername(), user.getPassword(), user.getPanelName());
                     }
                 }, 0, 1000  * 60 * 60
-        );
+        );*/
 
          final Timer getContentVideo = new Timer();
          getContentVideo.schedule(
@@ -322,25 +327,24 @@ public class ContentView extends AppCompatActivity  implements
                                     listVideo = getListVideo();
                                     if (listVideo.size() == 1  && mImage.size() != 0 && ((listVideo.get(0).contains("g.mp4")) || (listVideo.get(0).contains("v.mp4")))) {
                                         Log.e("0 video",  "restart img: " + mImage.size());
+                                        if (mImage.size() == 1) {
+                                            setImg(0);
+                                        }
                                         mImage = getListImg();
                                         if (mImage.size() == 0) {
                                             flag = 0;
                                         }
                                     }
                                     else {
+                                        mImageSwitcher.setImageURI(null);
                                         if (flag == 1) {
                                             flag = 0;
-                                            try {
-                                                mp.reset();
-                                                mp.setDataSource("/data/data/com.ekran.player/files/" + listVideo.get(0));
-                                                mp.prepare();
-                                                mp.start();
-                                                videoPlayer.setVisibility(View.VISIBLE);
-                                            } catch (IOException e) {
-                                                e.printStackTrace();
-                                            }
+                                            //mp.reset();
+                                            //mp.setDataSource("/data/data/com.ekran.player/files/" + listVideo.get(0));
+                                            // mp.prepare();
+                                            mp.start();
+                                            videoPlayer.setVisibility(View.VISIBLE);
                                         }
-                                        mImageSwitcher.setImageURI(null);
                                     }
                                 }
                             }

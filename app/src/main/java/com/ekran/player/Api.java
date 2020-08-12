@@ -33,7 +33,9 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
+import static com.ekran.player.MainActivity.BearerToken;
 import static com.ekran.player.MainActivity.adapter;
+import static com.ekran.player.MainActivity.user;
 import static com.ekran.player.MainActivity.version;
 
 public class Api {
@@ -45,17 +47,17 @@ public class Api {
     String password = null;
     String panelId = null;
 
-    public static String BearerToken = null;
     public static boolean reload = false;
 
     String panel = null;
 
     public Api() {
+
     }
 
     FtpLoader ftpLoader = new FtpLoader();
 
-  public  void RefreshToken(String username, final String password, final String panelName) {
+  public void RefreshToken(String username, final String password, final String panelName) {
       RequestBody formBody = new FormBody.Builder().add("coupon", "").build();
       HttpUrl.Builder httpBuilder = HttpUrl.parse(apiAddr + "/token?username=" + username + "&password=" + password).newBuilder();
       Request request = new Request.Builder().url(httpBuilder.build()).post(formBody).build();
@@ -85,6 +87,45 @@ public class Api {
       });
   }
 
+  public void GetNewPassword() {
+      HttpUrl.Builder httpBuilderCreatePanel = HttpUrl.parse(apiAddr +
+              "/api/GetNewPassword?userName=" + user.getUsername()).newBuilder();
+      Request requestCreatePanel = new Request.Builder().url(httpBuilderCreatePanel.build())
+              .header("Authorization", "Bearer " + BearerToken)
+              .build();
+
+      httpClient.newCall(requestCreatePanel).enqueue(new Callback() {
+          @Override
+          public void onFailure(Call call, IOException e) {
+              String mMessage = e.getMessage();
+              Log.e("failure Response", mMessage);
+              call.cancel();
+          }
+
+          @Override
+          public void onResponse(Call call, Response response) throws IOException {
+              String mMessage = response.body().string();
+              if (response.isSuccessful()) {
+                  try {
+                      JSONObject json = new JSONObject(mMessage);
+                      String newPass = json.getString("password");
+                      Log.e("newPass ", newPass);
+
+                      //List<User> users = adapter.getUsers();
+                      //User user = users.get(1);
+                      user.setPassword(newPass);
+                      adapter.update(user);
+                      Log.e("update user password ", newPass);
+
+                  } catch (Exception e) {
+                      e.printStackTrace();
+
+                  }
+              }
+          }
+      });
+  }
+
   public void createPanel(String username, final String panelName, String token) {
       HttpUrl.Builder httpBuilderCreatePanel = HttpUrl.parse(apiAddr +
               "/panel/createPanel?panelName=" + panelName + "&username=" + username).newBuilder();
@@ -106,6 +147,7 @@ public class Api {
                   try {
                       JSONObject json = new JSONObject(mMessage);
                       panelId = json.getString("id");
+
                       User user = adapter.getUser(1);
                       user.setId(Long.parseLong(panelId));
                       long x = adapter.insert(user);
@@ -144,6 +186,7 @@ public class Api {
                       serverUsername = json.getString("username");
                       serverToken = json.getString("access_token");
                       BearerToken = serverToken;
+                      Log.e("token", BearerToken);
                       adapter.insert(new User(1, serverUsername, password, serverToken, panelName));
                       createPanel(serverUsername, panelName, serverToken);
                   } catch (Exception e){
@@ -156,9 +199,8 @@ public class Api {
 
   public void GetListToUpload() {
       List<User> users = adapter.getUsers();
-      String token = users.get(1).getToken();
       final long id = users.get(1).getId();
-
+      Log.e("id", String.valueOf (id));
       HttpUrl.Builder httpBuilderCreatePanel = HttpUrl.parse(apiAddr +
               "/content/toUpload?PanelId=" + id).newBuilder();
       Request requestContent = new Request.Builder()

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Log;
 
 import com.ekran.player.model.Content;
+import com.ekran.player.model.User;
 
 import org.apache.commons.net.PrintCommandListener;
 import org.apache.commons.net.ftp.FTP;
@@ -19,6 +20,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.List;
 
+import static com.ekran.player.MainActivity.adapter;
 import static com.ekran.player.MainActivity.statusFtp;
 import static com.ekran.player.MainActivity.user;
 
@@ -64,6 +66,10 @@ public class FtpLoader {
                 }
                 con.logout();
                 con.disconnect();
+            } else {
+                Log.e("ftp", "not connected");
+                Api api = new Api();
+                api.GetNewPassword();
             }
         }
         catch (Exception e) {
