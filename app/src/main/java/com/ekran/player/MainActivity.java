@@ -48,11 +48,6 @@ public class MainActivity extends AppCompatActivity {
         adapter = new DatabaseAdapter(this);
         adapter.open();
 
-        //List<Version> versions = adapter.getVers(); Log.e("ver", versions.get(0).getVersion());
-        //adapter.insertVersion(new Version(1, "3.0.0", "0"));
-        //adapter.updateVersion(new Version(1, "3.0.0", "0"));
-        //updateApp();
-
          //adapter.delAllContent(); adapter.delAllUser(); adapter.delVersion();
         // если есть авторизация
         if (adapter.getCount() > 0)  {

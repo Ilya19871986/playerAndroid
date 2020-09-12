@@ -4,8 +4,13 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Bitmap.Config;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.SurfaceTexture;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
@@ -30,6 +35,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.ekran.player.model.User;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -107,8 +114,8 @@ public class ContentView extends AppCompatActivity  implements
         for (File f : filesArray) {
             if (f.isFile() && !f.getName().contains("_ftp") &&
                     (f.getName().contains(".png") ||
-                    f.getName().contains(".jpg") || f.getName().contains(".jpeg"))
-                ) {
+                            f.getName().contains(".jpg") || f.getName().contains(".jpeg"))
+            ) {
                 list.add(f.getName());
                 imgCount++;
             }
@@ -164,8 +171,32 @@ public class ContentView extends AppCompatActivity  implements
     }
 
     private void setImg(int idx) {
-        Uri uri = Uri.fromFile(new File("/data/data/com.ekran.player/files/" + mImage.get(idx)));
-        mImageSwitcher.setImageURI(uri);
+        //Uri uri = Uri.fromFile(new File("/data/data/com.ekran.player/files/" + mImage.get(idx)));
+        //mImageSwitcher.setImageURI(uri);
+        Bitmap bitmap = BitmapFactory.decodeFile("/data/data/com.ekran.player/files/" + mImage.get(idx));
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+
+        Bitmap newBitmap;
+        // если изображение горизонтально
+        if (width > height) {
+            if (width > 3500 || height > 2000) {
+                newBitmap = Bitmap.createScaledBitmap(bitmap, width / 2, height / 2, true);
+            } else {
+                newBitmap = Bitmap.createScaledBitmap(bitmap, width, height, true);
+            }
+        }
+        // изображение вертикальное
+        else {
+            if (height > 3500 || width > 2000) {
+                newBitmap = Bitmap.createScaledBitmap(bitmap, width / 2, height / 2, true);
+            } else {
+                newBitmap = Bitmap.createScaledBitmap(bitmap, width, height, true);
+            }
+        }
+
+        Drawable drawable = new BitmapDrawable(newBitmap);
+        mImageSwitcher.setImageDrawable(drawable);
     }
     private void updateTextureViewScaling(int viewWidth, int viewHeight) {
         FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) videoPlayer.getLayoutParams();
@@ -216,6 +247,16 @@ public class ContentView extends AppCompatActivity  implements
         // orientation = "1";
 
         mImageSwitcher = (ImageSwitcher) findViewById(R.id.imageSwitcher);
+
+        mImageSwitcher.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent homeIntent = new Intent(Intent.ACTION_MAIN);
+                homeIntent.addCategory( Intent.CATEGORY_HOME );
+                homeIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(homeIntent);
+            }
+        });
         /* анимация -- 1
         Animation slideInLeftAnimation = AnimationUtils.loadAnimation(this,
                 android.R.anim.slide_in_left);
@@ -263,8 +304,8 @@ public class ContentView extends AppCompatActivity  implements
         }
         else {
             // setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-            videoPlayer.setRotation(-90);
-            mImageSwitcher.setRotation(-90);
+            videoPlayer.setRotation(90);
+            mImageSwitcher.setRotation(90);
         }
 
         mp = new MediaPlayer();
@@ -290,17 +331,17 @@ public class ContentView extends AppCompatActivity  implements
                 }, 0, 1000  * 60 * 60
         );*/
 
-         final Timer getContentVideo = new Timer();
-         getContentVideo.schedule(
-                 new TimerTask() {
-                     @Override
-                     public void run() {
-                         api.GetListToDelete();
-                         api.GetListToUpload();
-                         api.checkVersion();
-                     }
-                 }, 0, 1000 * 60 //* 5
-         );
+        final Timer getContentVideo = new Timer();
+        getContentVideo.schedule(
+                new TimerTask() {
+                    @Override
+                    public void run() {
+                        api.GetListToDelete();
+                        api.GetListToUpload();
+                        api.checkVersion();
+                    }
+                }, 0, 1000 * 60 //* 5
+        );
 
         final Timer nextImg = new Timer();
         nextImg.schedule(
@@ -336,7 +377,7 @@ public class ContentView extends AppCompatActivity  implements
                                         }
                                     }
                                     else {
-                                        mImageSwitcher.setImageURI(null);
+                                        mImageSwitcher.setImageDrawable(null);
                                         if (flag == 1) {
                                             flag = 0;
                                             //mp.reset();
@@ -352,8 +393,5 @@ public class ContentView extends AppCompatActivity  implements
                     }
                 }, 0, 1000  * imgTime
         );
-/*
-
-*/
     }
 }
