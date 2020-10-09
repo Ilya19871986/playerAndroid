@@ -5,16 +5,12 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.graphics.SurfaceTexture;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.CountDownTimer;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -23,20 +19,14 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
 import android.widget.ImageSwitcher;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.Toast;
 import android.widget.ViewSwitcher;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.ekran.player.model.User;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -46,16 +36,21 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import static android.media.MediaPlayer.OnCompletionListener;
-import static com.ekran.player.Api.reload;
-import static com.ekran.player.MainActivity.adapter;
-import static com.ekran.player.MainActivity.orientation;
-import static com.ekran.player.MainActivity.user;
+import static com.ekran.player.MainActivity.sharedPrefs;
+import static com.ekran.player.MainActivity.myPrefs;
 
 public class ContentView extends AppCompatActivity  implements
         TextureView.SurfaceTextureListener {
 
+    public static String orientation = "0";
+    public static String panelId;
+    public static String panelName;
+    public static String userName;
+    public static String userPassword;
+    public static String bearerToken;
+    public static String imgTime;
+
     private TextureView videoPlayer;
-    //private Animation animationVideo;
     private MediaPlayer mp;
 
     private ImageSwitcher mImageSwitcher;
@@ -63,7 +58,6 @@ public class ContentView extends AppCompatActivity  implements
     private int imgCount = 0;
     private List<String> mImage = new ArrayList<>();
     ImageView imageView;
-    long imgTime;
     private int firstStart = 0;
 
     private int flag = 0;
@@ -157,10 +151,10 @@ public class ContentView extends AppCompatActivity  implements
                         currentFile++;
                     }
                     if (flag == 0) {
+                        mp.stop();
                         mp.reset();
                         mp.setDataSource("/data/data/com.ekran.player/files/" + listVideo.get(currentFile));
                         mp.prepare();
-                        //videoPlayer.startAnimation(animationVideo);
                         mp.start();
                     }
                 } catch (IOException e) {
@@ -181,17 +175,17 @@ public class ContentView extends AppCompatActivity  implements
         // если изображение горизонтально
         if (width > height) {
             if (width > 3500 || height > 2000) {
-                newBitmap = Bitmap.createScaledBitmap(bitmap, width / 2, height / 2, true);
+                newBitmap = Bitmap.createScaledBitmap(bitmap, width / 3, height / 3, false);
             } else {
-                newBitmap = Bitmap.createScaledBitmap(bitmap, width, height, true);
+                newBitmap = Bitmap.createScaledBitmap(bitmap, width, height, false);
             }
         }
         // изображение вертикальное
         else {
             if (height > 3500 || width > 2000) {
-                newBitmap = Bitmap.createScaledBitmap(bitmap, width / 2, height / 2, true);
+                newBitmap = Bitmap.createScaledBitmap(bitmap, width / 3, height / 3, false);
             } else {
-                newBitmap = Bitmap.createScaledBitmap(bitmap, width, height, true);
+                newBitmap = Bitmap.createScaledBitmap(bitmap, width, height, false);
             }
         }
 
@@ -222,6 +216,7 @@ public class ContentView extends AppCompatActivity  implements
     @Override
     public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
         surface = null;
+        mp.setDisplay(null);
         return false;
     }
 
@@ -236,15 +231,44 @@ public class ContentView extends AppCompatActivity  implements
 
         setContentView(R.layout.activity_content_view);
 
+        sharedPrefs = getSharedPreferences(myPrefs, Context.MODE_PRIVATE);
+
+        if (sharedPrefs.contains("orientation")) {
+            orientation = sharedPrefs.getString("orientation", "0");
+        }
+        if (sharedPrefs.contains("imgTime")) {
+            imgTime = (sharedPrefs.getString("imgTime", "0"));
+        }
+
+        if (sharedPrefs.contains("panelId")) {
+            panelId = sharedPrefs.getString("panelId", "0");
+        }
+
+        if (sharedPrefs.contains("panelName")) {
+            panelName = sharedPrefs.getString("panelName", "0");
+        }
+
+        if (sharedPrefs.contains("username")) {
+            userName = sharedPrefs.getString("username", "0");
+        }
+
+        if (sharedPrefs.contains("password")) {
+            userPassword = sharedPrefs.getString("password", "0");
+        }
+
+        if (sharedPrefs.contains("token")) {
+            bearerToken = sharedPrefs.getString("token", "0");
+        }
+/*
+        Log.e("orientation", orientation);
+        Log.e("imgTime", imgTime);
+        //Log.e("panelId", panelId);
+        Log.e("panelName", panelName);
+        Log.e("username", userName);
+        Log.e("password", userPassword);
+        Log.e("token", bearerToken);
+*/
         api = new Api();
-        //animationVideo = new AlphaAnimation(0, 1);
-        //animationVideo.setDuration(2000);
-
-        List<User> users = adapter.getUsers();
-        user = users.get(1);
-
-        orientation = String.valueOf(adapter.getVers().get(0).getOrientation());
-        // orientation = "1";
 
         mImageSwitcher = (ImageSwitcher) findViewById(R.id.imageSwitcher);
 
@@ -318,19 +342,6 @@ public class ContentView extends AppCompatActivity  implements
             e.printStackTrace();
         }
 
-        user = adapter.getUser(1);
-        imgTime = Long.parseLong(adapter.getVers().get(0).getImgTime());
-
-        /*final Timer refreshTokenTimer = new Timer();
-        refreshTokenTimer.schedule(
-                new TimerTask() {
-                    @Override
-                    public void run() {
-                        api.RefreshToken(user.getUsername(), user.getPassword(), user.getPanelName());
-                    }
-                }, 0, 1000  * 60 * 60
-        );*/
-
         final Timer getContentVideo = new Timer();
         getContentVideo.schedule(
                 new TimerTask() {
@@ -391,7 +402,7 @@ public class ContentView extends AppCompatActivity  implements
                             }
                         });
                     }
-                }, 0, 1000  * imgTime
+                }, 0, 1000  * Long.parseLong(imgTime)
         );
     }
 }

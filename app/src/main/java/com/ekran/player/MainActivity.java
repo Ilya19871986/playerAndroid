@@ -1,12 +1,15 @@
 package com.ekran.player;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.util.Log;
@@ -24,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -31,66 +35,36 @@ import static com.ekran.player.Api.reload;
 
 public class MainActivity extends AppCompatActivity {
 
-    public static DatabaseAdapter adapter = null;
-    private long userId=0;
-    public static User user = null;
-    public static String version = "3.0.0";
-    public static String orientation = "0";
+    public static String version = "3.0.1";
+    public static final String myPrefs = "myprefs";
     public static int statusFtp = 0; // 1 - идет загрузка
-    public  static  String BearerToken = null;
+
+    public static SharedPreferences sharedPrefs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        //StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder(); StrictMode.setVmPolicy(builder.build());
-        Intent intent = new Intent(this, ContentView.class);
-        adapter = new DatabaseAdapter(this);
-        adapter.open();
 
-         //adapter.delAllContent(); adapter.delAllUser(); adapter.delVersion();
-        // если есть авторизация
-        if (adapter.getCount() > 0)  {
-            List<User> users = adapter.getUsers();
-             BearerToken = users.get(1).getToken();
-             Log.e("token", BearerToken);
+        Intent intent = new Intent(this, ContentView.class);
+
+        sharedPrefs = getSharedPreferences(myPrefs, Context.MODE_PRIVATE);
+        if (sharedPrefs.getString("token", "").length() > 10 && sharedPrefs.getString("panelName", "0").length() > 1) {
             startActivity(intent);
         }
-        //updateApp();
-        /*
-        final Timer reloadAfterChangeSettings = new Timer();
-        reloadAfterChangeSettings.schedule(
-                new TimerTask() {
-                    @Override
-                    public void run() {
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                if (reload) {
-                                    reload = false;
-                                    restart();
-                                }
-                            }
-                        });
-                    }},0,1000 * 60
-                );*/
-    }
+        //else {
+          //  SharedPreferences.Editor editor = sharedPrefs.edit();
+          //  editor.putString(token, BearerToken);
+          //  editor.apply();
+        //}
 
-    public void updateApp() {
-        try {
-            File file = new File("/data/data/com.ekran.player/files/apprelease.apk");
-            if (file.exists()) {
-
-                file.setReadable(true, false);
-                Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setDataAndType(Uri.fromFile(file), "application/vnd.android.package-archive");
-                startActivity(intent);
-                Log.e("update", "ok");
-            }
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
+        // adapter.delAllContent(); adapter.delAllUser(); adapter.delVersion();
+        // если есть авторизация
+        //if (adapter.getCount() > 0)  {
+        //    List<User> users = adapter.getUsers();
+        //    BearerToken = users.get(1).getToken();
+        //    Log.e("token", BearerToken);
+        //}
     }
 
     public void Auth(View view) throws IOException {
@@ -100,14 +74,28 @@ public class MainActivity extends AppCompatActivity {
         Button button = (Button) findViewById(R.id.entering);
 
         if (login.getText().toString() != "" && pass.getText().toString() != "" && panelName.getText().toString() != "") {
-            button.setClickable(false);
-            copyFile();
-            Api api = new Api();
-            api.AuthCreatePanel(login.getText().toString(), pass.getText().toString(), panelName.getText().toString());
-            // начальная установка версии и ориентации
-            adapter.insertVersion(new Version(1, version, "0", "5"));
+            if (panelName.getText().toString().length() > 4) {
+                button.setClickable(false);
+                copyFile();
+                Api api = new Api();
 
-            restart();
+                SharedPreferences.Editor editor = sharedPrefs.edit();
+                editor.putString("panelName", panelName.getText().toString());
+                editor.putString("version", version);
+                editor.putString("orientation", "0");
+                editor.putString("imgTime", "5");
+                editor.putString("password", pass.getText().toString());
+                editor.apply();
+
+                api.AuthCreatePanel(login.getText().toString(), pass.getText().toString(), panelName.getText().toString());
+                restart();
+            }
+            else {
+                Toast toast = Toast.makeText(getApplicationContext(),
+                        "Название панели должно быть не менее 5 символов", Toast.LENGTH_LONG);
+                toast.show();
+            }
+
         }
     }
 
@@ -146,6 +134,5 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        adapter.close();
     }
 }

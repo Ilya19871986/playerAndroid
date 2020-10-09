@@ -1,35 +1,25 @@
 package com.ekran.player;
 
-import android.content.Context;
 import android.util.Log;
 
 import com.ekran.player.model.Content;
-import com.ekran.player.model.User;
 
-import org.apache.commons.net.PrintCommandListener;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
-import org.apache.commons.net.ftp.FTPFile;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.util.List;
 
-import static com.ekran.player.MainActivity.adapter;
 import static com.ekran.player.MainActivity.statusFtp;
-import static com.ekran.player.MainActivity.user;
+import static com.ekran.player.ContentView.userName;
+import static com.ekran.player.ContentView.userPassword;
 
 public class FtpLoader {
     FTPClient con = null;
 
-    public void checkNewVersion(String panelName)  {
-
-    }
 
     private void upLoad(String panelName, String contentType, String fileName, int idFile) {
         con = new FTPClient();
@@ -37,7 +27,7 @@ public class FtpLoader {
         int port = 4545;
         try {
             con.connect("193.124.58.144", port);
-            if (con.login(user.getUsername(), user.getPassword())) {
+            if (con.login(userName, userPassword)) {
                 con.enterLocalPassiveMode();
                 con.setFileType(FTP.BINARY_FILE_TYPE);
                 con.setDataTimeout(0);

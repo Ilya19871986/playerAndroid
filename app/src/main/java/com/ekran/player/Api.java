@@ -1,23 +1,13 @@
 package com.ekran.player;
 
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
-import android.content.Context;
-import android.content.Intent;
-import android.content.pm.VersionedPackage;
+import android.content.SharedPreferences;
 import android.util.Log;
-import android.view.Gravity;
-import android.widget.Toast;
 
 import com.ekran.player.model.Content;
-import com.ekran.player.model.User;
-import com.ekran.player.model.Version;
 import com.google.gson.Gson;
-import com.google.gson.internal.$Gson$Preconditions;
 import com.google.gson.reflect.TypeToken;
 
-import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -33,10 +23,14 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-import static com.ekran.player.MainActivity.BearerToken;
-import static com.ekran.player.MainActivity.adapter;
-import static com.ekran.player.MainActivity.user;
-import static com.ekran.player.MainActivity.version;
+import static com.ekran.player.ContentView.userPassword;
+import static com.ekran.player.MainActivity.sharedPrefs;
+import static com.ekran.player.ContentView.userName;
+import static com.ekran.player.ContentView.bearerToken;
+import static com.ekran.player.ContentView.panelId;
+import static com.ekran.player.ContentView.orientation;
+import static com.ekran.player.ContentView.imgTime;
+import static com.ekran.player.ContentView.panelName;
 
 public class Api {
   private final String apiAddr = "http://193.124.58.144:4444";
@@ -44,12 +38,8 @@ public class Api {
     OkHttpClient httpClient = new OkHttpClient();
     String serverUsername = null;
     String serverToken = null;
-    String password = null;
-    String panelId = null;
 
     public static boolean reload = false;
-
-    String panel = null;
 
     public Api() {
 
@@ -57,41 +47,11 @@ public class Api {
 
     FtpLoader ftpLoader = new FtpLoader();
 
-  public void RefreshToken(String username, final String password, final String panelName) {
-      RequestBody formBody = new FormBody.Builder().add("coupon", "").build();
-      HttpUrl.Builder httpBuilder = HttpUrl.parse(apiAddr + "/token?username=" + username + "&password=" + password).newBuilder();
-      Request request = new Request.Builder().url(httpBuilder.build()).post(formBody).build();
-      httpClient.newCall(request).enqueue(new Callback() {
-          @Override
-          public void onFailure(Call call, IOException e) {
-              String mMessage = e.getMessage();
-              Log.e("failure Response", mMessage);
-              call.cancel();
-          }
-          @Override
-          public void onResponse(Call call, Response response) throws IOException {
-              String mMessage = response.body().string();
-              if (response.isSuccessful()){
-                  try {
-                      JSONObject json = new JSONObject(mMessage);
-                      serverUsername = json.getString("username");
-                      serverToken = json.getString("access_token");
-                      BearerToken = serverToken;
-                      adapter.update(new User(1, serverUsername, password, serverToken, panelName));
-                      //Log.e("-", "Обновление токена завершено");
-                  } catch (Exception e){
-                      e.printStackTrace();
-                  }
-              }
-          }
-      });
-  }
-
   public void GetNewPassword() {
       HttpUrl.Builder httpBuilderCreatePanel = HttpUrl.parse(apiAddr +
-              "/api/GetNewPassword?userName=" + user.getUsername()).newBuilder();
+              "/api/GetNewPassword?userName=" + userName).newBuilder();
       Request requestCreatePanel = new Request.Builder().url(httpBuilderCreatePanel.build())
-              .header("Authorization", "Bearer " + BearerToken)
+              .header("Authorization", "Bearer " + bearerToken)
               .build();
 
       httpClient.newCall(requestCreatePanel).enqueue(new Callback() {
@@ -110,11 +70,10 @@ public class Api {
                       JSONObject json = new JSONObject(mMessage);
                       String newPass = json.getString("password");
                       Log.e("newPass ", newPass);
-
-                      //List<User> users = adapter.getUsers();
-                      //User user = users.get(1);
-                      user.setPassword(newPass);
-                      adapter.update(user);
+                      SharedPreferences.Editor editor = sharedPrefs.edit();
+                      editor.putString("password", newPass);
+                      userPassword = newPass;
+                      editor.apply();
                       Log.e("update user password ", newPass);
 
                   } catch (Exception e) {
@@ -126,11 +85,14 @@ public class Api {
       });
   }
 
-  public void createPanel(String username, final String panelName, String token) {
+  public void createPanel(String username, final String panelName) {
+
+      Log.e("create panel", panelName);
+
       HttpUrl.Builder httpBuilderCreatePanel = HttpUrl.parse(apiAddr +
               "/panel/createPanel?panelName=" + panelName + "&username=" + username).newBuilder();
       Request requestCreatePanel = new Request.Builder().url(httpBuilderCreatePanel.build())
-              .header("Authorization", "Bearer " + BearerToken)
+              .header("Authorization", "Bearer " + bearerToken)
               .build();
 
       httpClient.newCall(requestCreatePanel).enqueue(new Callback() {
@@ -148,14 +110,12 @@ public class Api {
                       JSONObject json = new JSONObject(mMessage);
                       panelId = json.getString("id");
 
-                      User user = adapter.getUser(1);
-                      user.setId(Long.parseLong(panelId));
-                      long x = adapter.insert(user);
-                      Log.e("id ", panelId);
-                      //int duration = Toast.LENGTH_LONG;
-                      //Toast toast = Toast.makeText(MainActivity.this, "Плеер зарегистрирован", duration);
-                      //toast.setGravity(Gravity.TOP, 0, 0);
-                      //toast.show();
+                      SharedPreferences .Editor editor = sharedPrefs.edit();
+                      editor.putString("panelId", panelId);
+                      editor.apply();
+
+                      Log.e("panel_id ", panelId);
+
                   } catch (Exception e){
                       e.printStackTrace();
                   }
@@ -164,11 +124,15 @@ public class Api {
       });
   }
 
-  public void AuthCreatePanel(String username, final String password, final String panelName) {
+  public void AuthCreatePanel(String username, final String password, final String _panelName) {
 
       RequestBody formBody = new FormBody.Builder().add("coupon", "").build();
       HttpUrl.Builder httpBuilder = HttpUrl.parse(apiAddr + "/token?username=" + username + "&password=" + password).newBuilder();
       Request request = new Request.Builder().url(httpBuilder.build()).post(formBody).build();
+
+      Log.e("user", username);
+      Log.e("password", password);
+      Log.e("_panelName", _panelName);
 
       httpClient.newCall(request).enqueue(new Callback() {
           @Override
@@ -185,10 +149,14 @@ public class Api {
                       JSONObject json = new JSONObject(mMessage);
                       serverUsername = json.getString("username");
                       serverToken = json.getString("access_token");
-                      BearerToken = serverToken;
-                      Log.e("token", BearerToken);
-                      adapter.insert(new User(1, serverUsername, password, serverToken, panelName));
-                      createPanel(serverUsername, panelName, serverToken);
+                      bearerToken = serverToken;
+                      SharedPreferences .Editor editor = sharedPrefs.edit();
+                      editor.putString("username", serverUsername);
+                      editor.putString("token", serverToken);
+                      editor.apply();
+
+                      Log.e("token", bearerToken);
+                      createPanel(serverUsername, _panelName);
                   } catch (Exception e){
                       e.printStackTrace();
                   }
@@ -198,14 +166,12 @@ public class Api {
   }
 
   public void GetListToUpload() {
-      List<User> users = adapter.getUsers();
-      final long id = users.get(1).getId();
-      Log.e("id", String.valueOf (id));
+
       HttpUrl.Builder httpBuilderCreatePanel = HttpUrl.parse(apiAddr +
-              "/content/toUpload?PanelId=" + id).newBuilder();
+              "/content/toUpload?PanelId=" + panelId).newBuilder();
       Request requestContent = new Request.Builder()
               .url(httpBuilderCreatePanel.build())
-              .header("Authorization", "Bearer " + BearerToken)
+              .header("Authorization", "Bearer " + bearerToken)
               .build();
       httpClient.newCall(requestContent).enqueue(new Callback() {
           @Override
@@ -222,8 +188,8 @@ public class Api {
                       Gson gson = new Gson();
                       List<Content> list = gson.fromJson(mMessage, new TypeToken<List<Content>>() {}.getType());
                       if (list.size() > 0)
-                        ftpLoader.uploadFileV2(getPanelName(), "Видео", list);
-                      setConnectTime(id);
+                        ftpLoader.uploadFileV2(panelName, "Видео", list);
+                      setConnectTime(Long.parseLong(panelId));
                   } catch (Exception e){
                       e.printStackTrace();
                   }
@@ -233,13 +199,11 @@ public class Api {
   }
   // установка sync = 1
   public void setUploadedFile(int id) {
-      List<User> users = adapter.getUsers();
-
       HttpUrl.Builder httpBuilder = HttpUrl.parse(apiAddr +
               "/panel/endUploadingFile?id=" + id).newBuilder();
       Request requestContent = new Request.Builder()
               .url(httpBuilder.build())
-              .header("Authorization", "Bearer " + BearerToken)
+              .header("Authorization", "Bearer " + bearerToken)
               .build();
 
       httpClient.newCall(requestContent).enqueue(new Callback() {
@@ -264,85 +228,71 @@ public class Api {
   }
 
     public void checkVersion() {
-        List<User> users = adapter.getUsers();
-        String token = users.get(1).getToken();
 
-        HttpUrl.Builder httpBuilder = HttpUrl.parse(apiAddr +
-                "/panel/checkNewVersion?PanelId=" + users.get(1).getId()).newBuilder();
-        Request requestContent = new Request.Builder()
-                .url(httpBuilder.build())
-                .header("Authorization", "Bearer " + BearerToken)
-                .build();
+      if (panelId != null && panelId != "0" && !panelId.isEmpty()) {
+          HttpUrl.Builder httpBuilder = HttpUrl.parse(apiAddr +
+                  "/panel/checkNewVersion?PanelId=" + panelId).newBuilder();
+          Request requestContent = new Request.Builder()
+                  .url(httpBuilder.build())
+                  .header("Authorization", "Bearer " + bearerToken)
+                  .build();
 
-        httpClient.newCall(requestContent).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                String mMessage = e.getMessage();
-                Log.e("failure Response", mMessage);
-                call.cancel();
-            }
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                String mMessage = response.body().string();
-                if (response.isSuccessful()){
-                    try {
-                        JSONObject json = new JSONObject(mMessage);
-                        String newVersion = json.getString("player_version");
-                        String orientation = json.getString("only_vip");
-                        String timeImg = json.getString("time_vip");
-                        timeImg = timeImg.equals("0") ? "5" : timeImg;
+          httpClient.newCall(requestContent).enqueue(new Callback() {
+              @Override
+              public void onFailure(Call call, IOException e) {
+                  String mMessage = e.getMessage();
+                  Log.e("failure Response", mMessage);
+                  call.cancel();
+              }
+              @Override
+              public void onResponse(Call call, Response response) throws IOException {
+                  String mMessage = response.body().string();
+                  if (response.isSuccessful()){
+                      try {
+                          JSONObject json = new JSONObject(mMessage);
+                          String newVersion = json.getString("player_version");
 
-                        if (checkChangeSettings(newVersion, orientation, timeImg)) {
-                            adapter.updateVersion(new Version(1, newVersion, orientation, timeImg));
-                            reload = true;
-                            Log.e("new", "settings");
-                        }
+                          String  newOrientation = json.getString("only_vip");
+                          String timeImg = json.getString("time_vip");
+                          timeImg = timeImg.equals("0") ? "5" : timeImg;
 
-                        version = adapter.getVers().get(0).getVersion();
-
-                        if (Long.parseLong(newVersion.replace(".", "")) > Long.parseLong(version.replace(".", ""))) {
-                            // устанавливаем новую версию и ориентацию
-                            adapter.updateVersion(new Version(1, newVersion, orientation, timeImg));
-                            FtpLoader ftpLoader = new FtpLoader();
-                            ftpLoader.uploadNewVersion(getPanelName());
-                        }
-                        Version version = adapter.getVers().get(0);
-                        Log.e("ver", version.getVersion() + ":" + version.getOrientation() + "imgTime:" + timeImg);
-
-                    } catch (Exception e){
-                        e.printStackTrace();
-                    }
-                }
-            }
-        });
+                          if (checkChangeSettings(newVersion, newOrientation, timeImg)) {
+                              SharedPreferences.Editor editor = sharedPrefs.edit();
+                              editor.putString("version", newVersion);
+                              editor.putString("orientation", newOrientation);
+                              editor.putString("imgTime", timeImg);
+                              editor.apply();
+                              orientation = newOrientation;
+                              imgTime = timeImg;
+                              Log.e("version", newVersion);
+                              Log.e("orientation", orientation);
+                              Log.e("imgTime", timeImg);
+                              reload = true;
+                          }
+                      } catch (Exception e){
+                          e.printStackTrace();
+                      }
+                  }
+              }
+          });
+      }
     }
 
-    private boolean checkChangeSettings(String ver, String orientation, String timeImg) {
-      String version = adapter.getVers().get(0).getVersion();
-      String ori = adapter.getVers().get(0).getOrientation();
-      String time = adapter.getVers().get(0).getImgTime();
-        Log.e("time", time); Log.e("time", timeImg);
-      if (!ver.equals(version) || !orientation.equals(ori) || !timeImg.equals(time)) {
+    private boolean checkChangeSettings(String ver, String _orientation, String timeImg) {
+
+      if (!orientation.equals(_orientation) || !imgTime.equals(timeImg)) {
           return true;
       }
       else return false;
     }
 
-  public String getPanelName() {
-      List<User> users = adapter.getUsers();
-      return users.get(1).getPanelName();
-  }
-
   public void GetListToDelete() {
-        List<User> users = adapter.getUsers();
-        String token = users.get(1).getToken();
-        long id = users.get(1).getId();
 
         HttpUrl.Builder httpBuilderCreatePanel = HttpUrl.parse(apiAddr +
-                "/content/GetDeletedFile?id=" + id).newBuilder();
+                "/content/GetDeletedFile?id=" + panelId).newBuilder();
         Request requestContent = new Request.Builder()
                 .url(httpBuilderCreatePanel.build())
-                .header("Authorization", "Bearer " + BearerToken)
+                .header("Authorization", "Bearer " + bearerToken)
                 .build();
 
       httpClient.newCall(requestContent).enqueue(new Callback() {
@@ -363,7 +313,6 @@ public class Api {
                           DeleteFile(c.getId());
                           File file = new File("/data/data/com.ekran.player/files/" + c.getFile_name());
                           file.delete();
-                          adapter.delContent(c.getId());
                           Log.e("Удален файл:", c.getFile_name());
                       }
                   } catch (Exception e){
@@ -379,7 +328,7 @@ public class Api {
                 "/panel/connect?id=" + id).newBuilder();
         Request requestContent = new Request.Builder()
                 .url(httpBuilderCreatePanel.build())
-                .header("Authorization", "Bearer " + BearerToken)
+                .header("Authorization", "Bearer " + bearerToken)
                 .build();
         httpClient.newCall(requestContent).enqueue(new Callback() {
             @Override
@@ -403,14 +352,12 @@ public class Api {
     }
 
     public void DeleteFile(long id) {
-        List<User> users = adapter.getUsers();
-        String token = users.get(1).getToken();
 
         HttpUrl.Builder httpBuilderCreatePanel = HttpUrl.parse(apiAddr +
                 "/panel/deleteFile?id=" + id).newBuilder();
         Request requestContent = new Request.Builder()
                 .url(httpBuilderCreatePanel.build())
-                .header("Authorization", "Bearer " + BearerToken)
+                .header("Authorization", "Bearer " + bearerToken)
                 .build();
 
         httpClient.newCall(requestContent).enqueue(new Callback() {
