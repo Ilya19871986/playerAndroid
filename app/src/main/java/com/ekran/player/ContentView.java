@@ -17,6 +17,7 @@ import android.view.KeyEvent;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.widget.FrameLayout;
@@ -230,6 +231,7 @@ public class ContentView extends AppCompatActivity  implements
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_content_view);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         sharedPrefs = getSharedPreferences(myPrefs, Context.MODE_PRIVATE);
 
@@ -322,6 +324,7 @@ public class ContentView extends AppCompatActivity  implements
         videoPlayer =  (TextureView) findViewById(R.id.videoPlayer);
         videoPlayer.setSurfaceTextureListener((TextureView.SurfaceTextureListener) this);
         videoPlayer.setAnimation(outAnimation);
+
         if (orientation.equals("0") || orientation == null) {
             //setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
             //videoPlayer.setRotation(0);

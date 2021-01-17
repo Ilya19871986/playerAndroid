@@ -31,6 +31,7 @@ import static com.ekran.player.ContentView.panelId;
 import static com.ekran.player.ContentView.orientation;
 import static com.ekran.player.ContentView.imgTime;
 import static com.ekran.player.ContentView.panelName;
+import static com.ekran.player.MainActivity.version;
 
 public class Api {
   private final String apiAddr = "http://193.124.58.144:4444";
@@ -90,7 +91,7 @@ public class Api {
       Log.e("create panel", panelName);
 
       HttpUrl.Builder httpBuilderCreatePanel = HttpUrl.parse(apiAddr +
-              "/panel/createPanel?panelName=" + panelName + "&username=" + username).newBuilder();
+              "/panel/createPanel?panelName=" + panelName + "&username=" + username + "&version=" + version).newBuilder();
       Request requestCreatePanel = new Request.Builder().url(httpBuilderCreatePanel.build())
               .header("Authorization", "Bearer " + bearerToken)
               .build();
@@ -310,10 +311,12 @@ public class Api {
                       Gson gson = new Gson();
                       List<Content> list = gson.fromJson(mMessage, new TypeToken<List<Content>>() {}.getType());
                       for (Content c : list) {
-                          DeleteFile(c.getId());
                           File file = new File("/data/data/com.ekran.player/files/" + c.getFile_name());
-                          file.delete();
-                          Log.e("Удален файл:", c.getFile_name());
+                          if (file.delete()) {
+                              // удаляем на сервере
+                              DeleteFile(c.getId());
+                              Log.e("Удален файл:", c.getFile_name());
+                          }
                       }
                   } catch (Exception e){
                       e.printStackTrace();

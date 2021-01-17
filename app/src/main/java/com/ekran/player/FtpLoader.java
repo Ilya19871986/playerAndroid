@@ -20,8 +20,7 @@ import static com.ekran.player.ContentView.userPassword;
 public class FtpLoader {
     FTPClient con = null;
 
-
-    private void upLoad(String panelName, String contentType, String fileName, int idFile) {
+    private void upLoad(String panelName, String contentType, String fileName, int idFile, int groupId) {
         con = new FTPClient();
         con.setControlEncoding("UTF-8");
         int port = 4545;
@@ -33,7 +32,12 @@ public class FtpLoader {
                 con.setDataTimeout(0);
                 String data = "/data/data/com.ekran.player/files/" + fileName + "_ftp";
 
-                InputStream is = con.retrieveFileStream("/" + panelName + "/" + contentType + "/" + fileName);
+                InputStream is;
+                if (groupId == 0) {
+                    is = con.retrieveFileStream("/" + panelName + "/" + contentType + "/" + fileName);
+                } else {
+                    is = con.retrieveFileStream("/Group_" + groupId + "/" + fileName);
+                }
 
                 OutputStream out = new FileOutputStream(new File(data));
                 byte[] bytesIn = new byte[1024];
@@ -71,7 +75,7 @@ public class FtpLoader {
         Thread t = new Thread(){
             public void run(){
                 FtpLoader ftpLoader = new FtpLoader();
-                ftpLoader.upLoad(panelName, "update", "apprelease.apk", 0);
+                ftpLoader.upLoad(panelName, "update", "apprelease.apk", 0, 0);
             }
         };
         t.start();
@@ -84,7 +88,7 @@ public class FtpLoader {
                 public void run(){
                     FtpLoader ftpLoader = new FtpLoader();
                     for (Content content: list) {
-                        ftpLoader.upLoad(panelName, type, content.getFile_name(), content.getId());
+                        ftpLoader.upLoad(panelName, type, content.getFile_name(), content.getId(), content.getGroup_id());
                     }
                     statusFtp = 0;
                 }

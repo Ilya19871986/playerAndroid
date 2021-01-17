@@ -6,6 +6,7 @@ public class Content {
      private String file_size;
      private int sync;
      private int deleted;
+     private int group_id;
 
     public int getId() {
         return id;
@@ -84,12 +85,13 @@ public class Content {
      private int panel_id;
      private int type_content;
 
-    public Content(int id, String file_name, String file_size, int sync, int deleted, String end_date, int user_id, int panel_id, int type_content) {
+    public Content(int id, String file_name, String file_size, int sync, int deleted, int group_id, String end_date, int user_id, int panel_id, int type_content) {
         this.id = id;
         this.file_name = file_name;
         this.file_size = file_size;
         this.sync = sync;
         this.deleted = deleted;
+        this.group_id = group_id;
         this.end_date = end_date;
         this.user_id = user_id;
         this.panel_id = panel_id;
@@ -99,5 +101,13 @@ public class Content {
     @Override
     public  String toString(){
         return id + " " + file_name;
+    }
+
+    public int getGroup_id() {
+        return group_id;
+    }
+
+    public void setGroup_id(int group_id) {
+        this.group_id = group_id;
     }
 }
